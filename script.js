@@ -273,6 +273,31 @@ bmiBmrForm.addEventListener("submit", function (e) {
   calculateDietOptions(bmr);
 });
 
+// Function to populate the ingredient dropdown
+function populateIngredientDropdown() {
+  const ingredientDropdown = document.getElementById("ingredient");
+  ingredientDropdown.innerHTML = ""; // Clear existing options
+
+  // Add a default placeholder option
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "Select an ingredient";
+  defaultOption.disabled = true;
+  defaultOption.selected = true;
+  ingredientDropdown.appendChild(defaultOption);
+
+  // Get sorted ingredient names
+  const sortedIngredients = Object.keys(mockNutritionDB).sort();
+
+  // Populate the dropdown with sorted ingredients
+  sortedIngredients.forEach((ingredient) => {
+    const option = document.createElement("option");
+    option.value = ingredient;
+    option.textContent = ingredient.charAt(0).toUpperCase() + ingredient.slice(1); // Capitalize the first letter
+    ingredientDropdown.appendChild(option);
+  });
+}
+
 // Function to display the current ingredients in the database
 function displayIngredients() {
   const ingredientList = document.getElementById("ingredientList");
@@ -282,8 +307,12 @@ function displayIngredients() {
     return;
   }
 
+  // Get sorted ingredient names
+  const sortedIngredients = Object.keys(mockNutritionDB).sort();
+
   let html = "<ul>";
-  for (const [name, data] of Object.entries(mockNutritionDB)) {
+  sortedIngredients.forEach((name) => {
+    const data = mockNutritionDB[name];
     html += `
       <li>
         <strong>${name}</strong> - 
@@ -295,7 +324,7 @@ function displayIngredients() {
         <button class="delete-ingredient-btn" data-name="${name}">Delete</button>
       </li>
     `;
-  }
+  });
   html += "</ul>";
 
   ingredientList.innerHTML = html;
@@ -375,35 +404,6 @@ addIngredientForm.addEventListener("submit", function (e) {
   addIngredientForm.reset();
 });
 
-// Function to populate the ingredient dropdown
-function populateIngredientDropdown() {
-  const ingredientDropdown = document.getElementById("ingredient");
-  ingredientDropdown.innerHTML = ""; // Clear existing options
-
-  // Add a default placeholder option
-  const defaultOption = document.createElement("option");
-  defaultOption.value = "";
-  defaultOption.textContent = "Select an ingredient";
-  defaultOption.disabled = true;
-  defaultOption.selected = true;
-  ingredientDropdown.appendChild(defaultOption);
-
-  // Populate the dropdown with ingredients from the database
-  for (const ingredient in mockNutritionDB) {
-    const option = document.createElement("option");
-    option.value = ingredient;
-    option.textContent = ingredient.charAt(0).toUpperCase() + ingredient.slice(1); // Capitalize the first letter
-    ingredientDropdown.appendChild(option);
-  }
-}
-
-// Call the function to populate the dropdown on page load
+// Call the functions to populate the dropdown and display ingredients on page load
 populateIngredientDropdown();
-
-// Update the dropdown whenever a new ingredient is added
-addIngredientForm.addEventListener("submit", function () {
-  populateIngredientDropdown();
-});
-
-// Display the initial ingredient list
 displayIngredients();
