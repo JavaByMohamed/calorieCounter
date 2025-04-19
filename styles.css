@@ -35,7 +35,7 @@ main {
   margin: 40px auto;
 }
 
-.intro, .meal-form, .meal-summary {
+.intro, .meal-form, .meal-summary, .bmi-bmr-calculator, .diet-options {
   background: white;
   padding: 20px;
   border-radius: 10px;
@@ -82,4 +82,147 @@ footer {
   text-align: center;
   margin-top: 40px;
   color: #aaa;
+}
+
+/* Add spacing between diet options */
+.diet-options ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.diet-options li {
+  margin-bottom: 20px; /* Add space between each option */
+}
+
+.diet-title {
+  font-size: 18px;
+  text-decoration: underline;
+  cursor: pointer;
+  margin-bottom: 5px; /* Add space between title and details */
+  font-weight: bold;
+}
+
+.diet-details {
+  padding-left: 10px; /* Optional: Indent details for better readability */
+}
+
+/* Meal Summary Table Styles */
+.meal-summary table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+.meal-summary th,
+.meal-summary td {
+  text-align: center; /* Center-align text */
+  padding: 10px;
+  border: 1px solid #ddd; /* Add borders for better structure */
+}
+
+.meal-summary th {
+  background-color: #f4f4f4; /* Light background for headers */
+  font-weight: bold;
+}
+
+.meal-summary tr:nth-child(even) {
+  background-color: #f9f9f9; /* Alternate row colors for readability */
+}
+
+.meal-summary tr:hover {
+  background-color: #f1f1f1; /* Highlight row on hover */
+}
+
+.meal-summary h3 {
+  color: #27ae60; /* Match the green theme */
+  margin-bottom: 10px;
+}
+
+.meal-summary p {
+  text-align: center;
+  color: #555;
+}
+
+/* Styles for action buttons */
+.meal-summary button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.meal-summary .edit-btn {
+  background-color: #3498db;
+  color: white;
+  margin-right: 5px;
+}
+
+.meal-summary .edit-btn:hover {
+  background-color: #2980b9;
+}
+
+.meal-summary .delete-btn {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.meal-summary .delete-btn:hover {
+  background-color: #c0392b;
+}
+
+/* Manage Ingredients Section */
+.manage-ingredients {
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.manage-ingredients h3 {
+  color: #27ae60;
+  margin-bottom: 15px;
+}
+
+.manage-ingredients ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.manage-ingredients li {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.manage-ingredients form {
+  margin-bottom: 20px;
+}
+
+/* Styles for ingredient action buttons */
+.manage-ingredients button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 5px;
+}
+
+.manage-ingredients .edit-ingredient-btn {
+  background-color: #3498db;
+  color: white;
+}
+
+.manage-ingredients .edit-ingredient-btn:hover {
+  background-color: #2980b9;
+}
+
+.manage-ingredients .delete-ingredient-btn {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.manage-ingredients .delete-ingredient-btn:hover {
+  background-color: #c0392b;
 }

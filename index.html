@@ -8,7 +8,7 @@
 </head>
 <body>
   <header>
-    <h1>calorieCounter</h1>
+    <h1>CalorieCounter</h1>
     <nav>
       <a href="#">Home</a>
       <a href="#">My Meals</a>
@@ -19,16 +19,71 @@
 
   <main>
     <section class="intro">
-      <h2>Track Your Meals & Nutrition</h2>
+      <h2>Keep track of your Meals & Nutrition</h2>
       <p>Build your meals, track calories, and understand your macronutrients: fat, carbs, and protein.</p>
     </section>
 
-    <section class="meal-form">
+    <section class="bmi-bmr-calculator">
+      <h2>Calculate Your BMI and BMR</h2>
+      <form id="bmiBmrForm">
+        <div class="form-group">
+          <label for="gender">Gender</label>
+          <input type="radio" name="sex" id="sex1" value="m" checked />
+          <span class="rbmark"></span>Male
+          &nbsp;
+          <input type="radio" name="sex" id="sex2" value="f" />
+          <span class="rbmark"></span>Female
+        </div>
+
+        <div class="form-group">
+          <label for="age">Age (years)</label>
+          <input type="number" id="age" placeholder="e.g. 25 years" required />
+        </div>
+
+        <div class="form-group">
+          <label for="height">Height (cm)</label>
+          <input type="number" id="height" placeholder="e.g. 175 CM" required />
+        </div>
+
+        <div class="form-group">
+          <label for="weight">Weight (kg)</label>
+          <input type="number" id="weight" placeholder="e.g. 70 KG" required />
+        </div>
+
+        <button type="submit">Calculate BMI and BMR</button>
+      </form>
+
+      <div class="bmi-result">
+        <h3>Your BMI</h3>
+        <p id="bmiValue">0</p>
+        <p id="bmiCategory"></p>
+        <p id="bmiAdvice"></p>
+      </div>
+
+      <div class="bmr-result">
+        <h3>Your BMR</h3>
+        <p id="bmrValue">0</p>
+        <p id="bmrAdvice"></p>
+      </div>
+    </section>
+<!-- Diet Options Section -->
+    <section class="diet-options">
+        <h2>Choose Your Diet Plan</h2>
+        <p>Based on your BMI and BMR, we recommend the following diet plans:</p>
+            <div class="diet-options" id="dietOptions" style="display: none;">
+              <h3>Choose Your Diet Plan</h3>
+              <div id="dietResults"></div>
+            </div>
+      </section>
+
+   <section class="meal-form">
       <h3>Add a Meal</h3>
       <form id="mealForm">
         <div class="form-group">
           <label for="ingredient">Ingredient</label>
-          <input type="text" id="ingredient" placeholder="e.g. Chicken Breast" required />
+          <select id="ingredient" required>
+            <!-- Options will be dynamically populated -->
+          </select>
         </div>
         <div class="form-group">
           <label for="amount">Amount (grams)</label>
@@ -41,6 +96,39 @@
     <section class="meal-summary">
       <h3>Meal Summary</h3>
       <div id="mealOutput">
+        <p>No ingredients added yet.</p>
+      </div>
+    </section>
+
+    <section class="manage-ingredients">
+      <h3>Manage Ingredients</h3>
+      <p>You can edit or delete ingredients from the list below.</p>
+      <form id="addIngredientForm">
+        <div class="form-group">
+          <label for="ingredientName">Ingredient Name</label>
+          <input type="text" id="ingredientName" placeholder="e.g. Salmon" required />
+        </div>
+        <div class="form-group">
+          <label for="ingredientCalories">Calories (per 100g)</label>
+          <input type="number" id="ingredientCalories" placeholder="e.g. 208" required />
+        </div>
+        <div class="form-group">
+          <label for="ingredientProtein">Protein (g per 100g)</label>
+          <input type="number" id="ingredientProtein" placeholder="e.g. 20" required />
+        </div>
+        <div class="form-group">
+          <label for="ingredientFat">Fat (g per 100g)</label>
+          <input type="number" id="ingredientFat" placeholder="e.g. 13" required />
+        </div>
+        <div class="form-group">
+          <label for="ingredientCarbs">Carbs (g per 100g)</label>
+          <input type="number" id="ingredientCarbs" placeholder="e.g. 0" required />
+        </div>
+        <button type="submit">Add Ingredient</button>
+      </form>
+
+      <h4>Current Ingredients</h4>
+      <div id="ingredientList">
         <p>No ingredients added yet.</p>
       </div>
     </section>
