@@ -9,15 +9,21 @@ body {
   background: #f6f9fc;
   color: #333;
   line-height: 1.6;
-  padding: 20px;
 }
 
 header {
-  background: #2ecc71;
-  color: white;
-  padding: 20px 0;
-  text-align: center;
-}
+    background: #2ecc71;
+    color: white;
+    text-align: center;
+    position: sticky;
+    top: 0; /* Stick to the top of the viewport */
+    z-index: 1000; /* Ensure it stays above other elements */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Optional: Add a shadow for better visibility */
+    display: flex; /* Use Flexbox for centering */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    flex-direction: column; /* Stack items vertically if needed */
+  }
 
 header h1 {
   margin-bottom: 10px;
@@ -225,4 +231,228 @@ footer {
 
 .manage-ingredients .delete-ingredient-btn:hover {
   background-color: #c0392b;
+}
+
+/* Hero Header Styles */
+.hero-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #2ecc71;
+  color: white;
+}
+
+.hero-header img {
+  max-width: 100%;
+  height: auto;
+}
+
+.logo-container img {
+  max-width: 150px;
+  height: auto;
+}
+
+.twbb-headline {
+  font-size: 28px;
+  font-weight: bold;
+  margin-top: 20px;
+}
+
+.twbb-headline-dynamic-text {
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.twbb-headline-plain-text {
+  color: #ffffff;
+  font-size: 20px;
+}
+
+.twbb-headline svg path {
+  stroke: #ffffff;
+  fill: none;
+  stroke-width: 2;
+}
+
+.twbb-nav-menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+}
+
+.twbb-nav-menu li {
+  margin: 0 15px;
+}
+
+.twbb-nav-menu a {
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.twbb-nav-menu a:hover {
+  text-decoration: underline;
+}
+
+/* Hamburger Menu Styles */
+.hamburger-menu {
+  position: relative;
+}
+
+.twbb-menu-toggle {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  font-size: 24px;
+}
+
+.twbb-menu-toggle__icon--close {
+  display: none;
+}
+
+#mobileMenu {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  background: #2ecc71;
+  color: white;
+  width: 200px;
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: none;
+  flex-direction: column;
+}
+
+#mobileMenu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#mobileMenu li {
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+#mobileMenu li:last-child {
+  border-bottom: none;
+}
+
+#mobileMenu a {
+  color: white;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+#mobileMenu a:hover {
+  text-decoration: underline;
+}
+
+/* Show menu when active */
+#mobileMenu.active {
+  display: flex;
+}
+
+.twbb-menu-toggle.active .twbb-menu-toggle__icon--open {
+  display: none;
+}
+
+.twbb-menu-toggle.active .twbb-menu-toggle__icon--close {
+  display: inline;
+}
+
+/* Top Navigation */
+.topnav {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  background-color: #2ecc71;
+}
+
+/* Logo and Hamburger Menu Container */
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+/* Hamburger Menu */
+.container {
+  display: inline-block;
+  cursor: pointer;
+  margin-left: 20px; /* Add spacing between the logo and the button */
+}
+
+.bar1, .bar2, .bar3 {
+  width: 30px;
+  height: 4px;
+  background-color: #000000;
+  margin: 5px 0;
+  transition: 0.4s;
+}
+
+/* Transformations for the "X" state */
+.change .bar1 {
+  transform: translate(0, 9px) rotate(-45deg);
+}
+
+.change .bar2 {
+  opacity: 0;
+}
+
+.change .bar3 {
+  transform: translate(0, -9px) rotate(45deg);
+}
+
+/* Hide the section by default */
+.hidden {
+    display: none;
+}
+  
+  /* Show the section when active */
+  #myLinks.active {
+    display: flex;
+    background-color: #000000;
+    padding: 10px;
+    text-align: center;
+}
+
+/* Navigation Links */
+#myLinks {
+    position: sticky;
+    top: 105px; /* Adjust this value to match the height of the header */
+    z-index: 500; /* Ensure it stays below the header but above other content */
+    background-color: #2ecc71;
+    padding: 10px;
+    display: none; /* Initially hidden */
+    flex-direction: column;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Optional: Add a shadow for better visibility */
+  }
+
+/* Links in the #myLinks section */
+#myLinks a {
+    display: block; /* Make each link take up the full width of its container */
+    color: white;
+    text-decoration: none;
+    padding: 10px;
+    font-size: 16px;
+    text-align: center; /* Center the text */
+  }
+
+#myLinks a:hover {
+  background-color: #27ae60;
+}
+
+/* Show links when active */
+.topnav.active #myLinks {
+  display: flex;
+  padding: 10px;
+}
+
+.logo {
+  width: auto;
+  height: auto;
 }

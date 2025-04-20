@@ -150,25 +150,25 @@ function editMealItem(index) {
 function calculateDietOptions(bmr) {
   const dietOptions = [
     {
-      name: "Balanced Diet Maintenance",
+      name: "Balanced Diet (Maintenance)",
       carbs: 40,
       protein: 30,
       fat: 30,
     },
     {
-      name: "High Protein Fat Loss",
+      name: "High Protein (Fat Loss)",
       carbs: 30,
       protein: 40,
       fat: 30,
     },
     {
-      name: "Muscle Gain Higher Carbs",
+      name: "Muscle Gain (Higher Carbs)",
       carbs: 50,
       protein: 30,
       fat: 20,
     },
     {
-      name: "Low Carbs Keto",
+      name: "Low Carbs (Keto)",
       carbs: 10,
       protein: 60,
       fat: 30,
@@ -407,3 +407,9 @@ addIngredientForm.addEventListener("submit", function (e) {
 // Call the functions to populate the dropdown and display ingredients on page load
 populateIngredientDropdown();
 displayIngredients();
+
+function toggleDropdown(x) {
+  const menu = document.getElementById("myLinks");
+  menu.classList.toggle("active"); // Toggle the "active" class to show/hide the dropdown
+  x.classList.toggle("change"); // Optional: Add a class to animate the hamburger icon
+}

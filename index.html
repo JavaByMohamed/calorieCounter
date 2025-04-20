@@ -7,20 +7,34 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header>
-    <h1>CalorieCounter</h1>
-    <nav>
-      <a href="#">Home</a>
-      <a href="#">My Meals</a>
-      <a href="#">Login</a>
-      <a href="#">Sign Up</a>
-    </nav>
-  </header>
+    <header>
+        <div class="topnav">
+          <a href="/">
+            <img class="logo" src="https://aisite.10web.io/97/wp-content/uploads/sites/199/2025/04/logo_FBCLkj2t.webp" alt="Logo">
+          </a>
+          <div class="container" onclick="toggleDropdown(this)">
+            <div class="bar1"></div>
+            <div class="bar2"></div>
+            <div class="bar3"></div>
+          </div>
+        </div>
+
+    </header>
+    <section id="myLinks" class="navbar hidden">
+    <div>
+        <div>
+            <a href="/">Home</a>
+            <a href="/ingredients.html">Manage ingredients</a>
+            <a href="/meal-plan.html">Add a meal</a>
+            <a href="#contact">Contact Us</a>
+        </div>
+    </div>
+    </section>
 
   <main>
     <section class="intro">
-      <h2>Keep track of your Meals & Nutrition</h2>
-      <p>Build your meals, track calories, and understand your macronutrients: fat, carbs, and protein.</p>
+      <h2>Track Your Calories, Achieve Your Goals</h2>
+      <p>CalorieCounter is your personal nutrition assistant. Effortlessly log your meals, track your calorie intake, and gain insights into your diet. Start your journey towards a healthier you today!</p>
     </section>
 
     <section class="bmi-bmr-calculator">
@@ -55,14 +69,14 @@
 
       <div class="bmi-result">
         <h3>Your BMI</h3>
-        <p id="bmiValue">0</p>
+        <p id="bmiValue"></p>
         <p id="bmiCategory"></p>
         <p id="bmiAdvice"></p>
       </div>
 
       <div class="bmr-result">
         <h3>Your BMR</h3>
-        <p id="bmrValue">0</p>
+        <p id="bmrValue"></p>
         <p id="bmrAdvice"></p>
       </div>
     </section>
@@ -71,7 +85,6 @@
         <h2>Choose Your Diet Plan</h2>
         <p>Based on your BMI and BMR, we recommend the following diet plans:</p>
             <div class="diet-options" id="dietOptions" style="display: none;">
-              <h3>Choose Your Diet Plan</h3>
               <div id="dietResults"></div>
             </div>
       </section>
