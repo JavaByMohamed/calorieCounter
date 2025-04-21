@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Add a Meal</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header></header> <!-- Header will be dynamically loaded here -->
+
+  <main>
+    <section class="meal-form">
+      <h3>Add a Meal</h3>
+      <form id="mealForm">
+        <div class="form-group">
+          <label for="ingredient">Ingredient</label>
+          <select id="ingredient" required>
+            <!-- Options will be dynamically populated -->
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="amount">Amount (grams)</label>
+          <input type="number" id="amount" placeholder="e.g. 150" required />
+        </div>
+        <button type="submit">Add to Meal</button>
+      </form>
+    </section>
+
+    <section class="meal-summary">
+      <h3>Meal Summary</h3>
+      <div id="mealOutput">
+        <p>No ingredients added yet.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 calorieCounter. Built for fitness and nutrition enthusiasts.</p>
+  </footer>
+  <script src="script/dropdownMenu.js"></script>
+  <script src="script/loadHeader.js"></script>
+  <script type="module" src="script/mealForm.js"></script>
+</body>
+</html>
