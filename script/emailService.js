@@ -6,7 +6,7 @@
 
 const EMAIL_CONFIG = {
   publicKey: "yrU1yUCwjHFRULg25",       // EmailJS > Account > API Keys
-  serviceId: "service_9be002w",        // EmailJS > Email Services > Service ID
+  serviceId: "service_8550uys",        // EmailJS > Email Services > Service ID
   templateId: "template_phn0cd2",      // EmailJS > Email Templates > Template ID
 };
 
@@ -36,11 +36,9 @@ async function sendVerificationEmail(toEmail, toName, code, purpose = "verificat
     : `Email Verification Code: ${code}`;
 
   const templateParams = {
-    to_email: toEmail,
+    email: toEmail,
     to_name: toName,
-    passcode: code,
     code: code,
-    subject: subject,
     purpose: purpose === "reset" ? "reset your password" : "verify your email",
   };
 
@@ -51,15 +49,20 @@ async function sendVerificationEmail(toEmail, toName, code, purpose = "verificat
   }
 
   try {
+    console.log("📧 Attempting to send email via EmailJS...", {
+      serviceId: EMAIL_CONFIG.serviceId,
+      templateId: EMAIL_CONFIG.templateId,
+      to: toEmail,
+    });
     const response = await emailjs.send(
       EMAIL_CONFIG.serviceId,
       EMAIL_CONFIG.templateId,
       templateParams
     );
-    console.log("📧 Email sent successfully:", response.status);
+    console.log("📧 Email sent successfully:", response.status, response.text);
     return true; // Email actually sent
   } catch (error) {
-    console.error("❌ Failed to send email:", error);
+    console.error("❌ Failed to send email. Status:", error?.status, "Text:", error?.text, "Full error:", error);
     console.warn("📧 Falling back to demo mode — code will be shown on screen.");
     return false; // Fall back to demo mode (code shown on screen)
   }
