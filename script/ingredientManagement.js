@@ -1,4 +1,4 @@
-import { mockNutritionDB, addIngredient, saveMockNutritionDB } from './mockDatabase.js';
+import { mockNutritionDB, addIngredient, saveMockNutritionDB, syncFromCloud } from './mockDatabase.js';
 
 // Populate the ingredient dropdown
 function populateIngredientDropdown() {
@@ -20,7 +20,7 @@ function populateIngredientDropdown() {
   sortedIngredients.forEach((ingredient) => {
     const option = document.createElement("option");
     option.value = ingredient;
-    option.textContent = ingredient.charAt(0).toUpperCase() + ingredient.slice(1); // Capitalize the first letter
+    option.textContent = ingredient.charAt(0).toUpperCase() + ingredient.slice(1);
     ingredientDropdown.appendChild(option);
   });
 }
@@ -47,7 +47,8 @@ function displayIngredients() {
         Calories: ${data.calories.toFixed(2)}, 
         Protein: ${data.protein.toFixed(2)}g, 
         Fat: ${data.fat.toFixed(2)}g, 
-        Carbs: ${data.carbs.toFixed(2)}g
+        Carbs: ${data.carbs.toFixed(2)}g,
+        Fiber: ${(data.fiber || 0).toFixed(2)}g
         <button class="edit-ingredient-btn" data-name="${name}">Edit</button>
         <button class="delete-ingredient-btn" data-name="${name}">Delete</button>
       </li>
@@ -76,6 +77,8 @@ function displayIngredients() {
 
 // Handle form submission to add a new ingredient
 const addIngredientForm = document.getElementById("addIngredientForm");
+let editingName = null; // Track the ingredient being edited
+
 addIngredientForm.addEventListener("submit", (e) => {
   e.preventDefault();
 
@@ -84,42 +87,51 @@ addIngredientForm.addEventListener("submit", (e) => {
   const protein = document.getElementById("ingredientProtein").value;
   const fat = document.getElementById("ingredientFat").value;
   const carbs = document.getElementById("ingredientCarbs").value;
+  const fiber = document.getElementById("ingredientFiber") ? document.getElementById("ingredientFiber").value : 0;
 
   if (!name || isNaN(calories) || isNaN(protein) || isNaN(fat) || isNaN(carbs)) {
     alert("Please enter valid ingredient details.");
     return;
   }
 
+  // If we were editing, remove the old entry (in case name changed)
+  if (editingName && editingName !== name.toLowerCase()) {
+    delete mockNutritionDB[editingName];
+  }
+  editingName = null;
+
   // Add the new ingredient to the database
-  addIngredient(name, calories, protein, fat, carbs);
+  addIngredient(name, calories, protein, fat, carbs, fiber);
 
   // Refresh the ingredient list
   displayIngredients();
 
   // Reset the form
   addIngredientForm.reset();
+
+  // Re-enable all edit buttons
+  document.querySelectorAll(".edit-ingredient-btn").forEach((button) => {
+    button.disabled = false;
+  });
 });
 
 // Delete an ingredient
 function deleteIngredient(name) {
   if (confirm(`Are you sure you want to delete "${name}"?`)) {
-    delete mockNutritionDB[name]; // Remove the ingredient from the database
-    saveMockNutritionDB(); // Save the updated database to localStorage
-    displayIngredients(); // Refresh the ingredient list
+    delete mockNutritionDB[name];
+    saveMockNutritionDB();
+    displayIngredients();
   }
 }
 
-// Edit an ingredient
-let isEditing = false; // Track if an ingredient is being edited
-
+// Edit an ingredient (no longer deletes — just populates the form)
 function editIngredient(name) {
-  if (isEditing) {
+  if (editingName) {
     alert("You are already editing an ingredient. Please save or cancel the current edit before editing another.");
     return;
   }
 
-  isEditing = true;
-
+  editingName = name;
   const ingredientData = mockNutritionDB[name];
 
   // Populate the form with the ingredient's current values
@@ -128,32 +140,17 @@ function editIngredient(name) {
   document.getElementById("ingredientProtein").value = ingredientData.protein;
   document.getElementById("ingredientFat").value = ingredientData.fat;
   document.getElementById("ingredientCarbs").value = ingredientData.carbs;
+  const fiberInput = document.getElementById("ingredientFiber");
+  if (fiberInput) fiberInput.value = ingredientData.fiber || 0;
 
-  // Disable all "Edit" buttons except the one being edited
+  // Disable all "Edit" buttons while editing
   document.querySelectorAll(".edit-ingredient-btn").forEach((button) => {
     button.disabled = true;
-  });
-
-  // Enable the "Edit" button for the current ingredient
-  const currentEditButton = document.querySelector(`.edit-ingredient-btn[data-name="${name}"]`);
-  if (currentEditButton) {
-    currentEditButton.disabled = false;
-  }
-
-  // Remove the ingredient from the database temporarily
-  delete mockNutritionDB[name];
-  saveMockNutritionDB();
-
-  // Add a listener to reset the editing state when the form is submitted
-  addIngredientForm.addEventListener("submit", () => {
-    isEditing = false;
-    document.querySelectorAll(".edit-ingredient-btn").forEach((button) => {
-      button.disabled = false;
-    });
   });
 }
 
 // Call the functions on page load
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await syncFromCloud();
   displayIngredients();
 });

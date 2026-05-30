@@ -33,11 +33,37 @@
         <p>No ingredients added yet.</p>
       </div>
     </section>
+
+    <section class="save-meal-section">
+      <h3>Save Meal to History</h3>
+      <div class="form-group">
+        <label for="mealUsername">Saving as:</label>
+        <select id="mealUsername" disabled>
+          <option value="">-- Not logged in --</option>
+        </select>
+        <small>Log in from the <a href="index.html">Home page</a> to save meals to your profile.</small>
+      </div>
+      <div class="form-group">
+        <label for="mealName">Meal Name</label>
+        <input type="text" id="mealName" placeholder="e.g. Monday Lunch" />
+      </div>
+      <div class="form-group">
+        <label for="mealServings">Servings (portions)</label>
+        <input type="number" id="mealServings" min="1" step="1" value="1" placeholder="e.g. 2" />
+        <small>How many portions does this meal make? Macros per serving will be calculated automatically.</small>
+      </div>
+      <button id="saveMealBtn">💾 Save Meal</button>
+      <p><a href="meal-history.html">📋 View Meal History</a></p>
+    </section>
   </main>
 
   <footer>
     <p>© 2025 calorieCounter. Built for fitness and nutrition enthusiasts.</p>
   </footer>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="script/firebaseStorage.js"></script>
   <script src="script/dropdownMenu.js"></script>
   <script src="script/loadHeader.js"></script>
   <script type="module" src="script/mealForm.js"></script>

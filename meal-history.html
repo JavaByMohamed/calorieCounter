@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meal History</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header></header>
+
+  <main>
+    <section class="meal-history">
+      <h3>📋 Community Meal Feed</h3>
+      <p class="feed-subtitle">All meals from every user — get inspired by what others are eating! 🍽️</p>
+      <div class="history-filters">
+        <label for="filterDate">Filter by date:</label>
+        <input type="date" id="filterDate" />
+        <label for="filterUser">Filter by user:</label>
+        <select id="filterUser">
+          <option value="">All Users</option>
+        </select>
+        <button id="clearFilterBtn">Show All</button>
+      </div>
+      <div id="dailySummary"></div>
+      <div id="historyOutput">
+        <p>No saved meals yet.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>© 2025 calorieCounter. Built for fitness and nutrition enthusiasts.</p>
+  </footer>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="script/firebaseStorage.js"></script>
+  <script src="script/dropdownMenu.js"></script>
+  <script src="script/loadHeader.js"></script>
+  <script src="script/mealHistory.js"></script>
+</body>
+</html>
+

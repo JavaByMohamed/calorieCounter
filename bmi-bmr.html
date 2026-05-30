@@ -14,6 +14,13 @@
       <h2>Calculate Your BMI and BMR</h2>
       <form id="bmiBmrForm">
         <div class="form-group">
+          <label for="bmiUsername">Save results to:</label>
+          <select id="bmiUsername" disabled>
+            <option value="">-- Not logged in --</option>
+          </select>
+          <small>Log in from the <a href="index.html">Home page</a> to save results to your profile.</small>
+        </div>
+        <div class="form-group">
           <label for="gender">Gender</label>
           <input type="radio" name="sex" id="sex1" value="m" checked />
           <span class="rbmark"></span>Male
@@ -37,6 +44,17 @@
           <input type="number" id="weight" placeholder="e.g. 70 KG" required />
         </div>
 
+        <div class="form-group">
+          <label for="activityLevel">Activity Level</label>
+          <select id="activityLevel" required>
+            <option value="1.2">Sedentary (little or no exercise)</option>
+            <option value="1.375">Lightly active (1-3 days/week)</option>
+            <option value="1.55" selected>Moderately active (3-5 days/week)</option>
+            <option value="1.725">Very active (6-7 days/week)</option>
+            <option value="1.9">Extra active (very hard exercise/physical job)</option>
+          </select>
+        </div>
+
         <button type="submit">Calculate BMI and BMR</button>
       </form>
 
@@ -49,8 +67,23 @@
 
       <div class="bmr-result">
         <h3>Your BMR</h3>
-        <p id="bmrValue"></p>
+        <p><strong>BMR:</strong> <span id="bmrValue"></span> kcal/day</p>
+        <p><strong>TDEE:</strong> <span id="tdeeValue"></span> kcal/day</p>
         <p id="bmrAdvice"></p>
+      </div>
+
+      <div id="calorieTargetSelection" style="display: none;" class="calorie-target">
+        <h3>Choose Your Calorie Target</h3>
+        <p>Select which value to base your diet plan on:</p>
+        <label>
+          <input type="radio" name="calorieTarget" value="bmr" />
+          <span id="bmrLabel"><strong>BMR</strong> — Use if you want a strict deficit (rest-level calories)</span>
+        </label>
+        <br/><br/>
+        <label>
+          <input type="radio" name="calorieTarget" value="tdee" checked />
+          <span id="tdeeLabel"><strong>TDEE</strong> — Use for maintenance (includes activity)</span>
+        </label>
       </div>
     </section>
 
@@ -60,12 +93,29 @@
       <div id="dietResults">
         <!-- Diet options will be dynamically populated here -->
       </div>
+      <div id="saveDietSection" style="display:none;" class="save-diet-section">
+        <h3>💾 Save Diet Plan to Your Profile</h3>
+        <div class="form-group">
+          <label for="selectedDietPlan">Choose your plan:</label>
+          <select id="selectedDietPlan">
+            <option value="Balanced Diet (Maintenance)">Balanced Diet (Maintenance)</option>
+            <option value="High Protein (Fat Loss)">High Protein (Fat Loss)</option>
+            <option value="Muscle Gain (Higher Carbs)">Muscle Gain (Higher Carbs)</option>
+            <option value="Low Carbs (Keto)">Low Carbs (Keto)</option>
+          </select>
+        </div>
+        <button type="button" id="saveDietBtn">💾 Save BMI, BMR & Diet to Profile</button>
+      </div>
     </section>
   </main>
 
   <footer>
     <p>© 2025 calorieCounter. Built for fitness and nutrition enthusiasts.</p>
   </footer>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="script/firebaseStorage.js"></script>
   <script src="script/loadHeader.js"></script>
   <script src="script/dropdownMenu.js"></script>
   <script src="script/bmiBmr.js"></script>

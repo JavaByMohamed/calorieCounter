@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Workout Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header></header>
+
+  <main>
+    <section class="workout-tracker">
+      <h2>Workout Tracker</h2>
+
+      <div class="form-group">
+        <label for="workoutUsername">Username</label>
+        <select id="workoutUsername">
+          <option value="">-- Select user --</option>
+        </select>
+        <button id="loadUserBtn">Load User Data</button>
+      </div>
+
+      <div id="workoutContent" style="display:none;">
+        <h3>Log Exercise</h3>
+        <form id="exerciseForm">
+          <div class="form-group">
+            <label for="muscleGroup">Muscle Group</label>
+            <select id="muscleGroup" required>
+              <option value="">-- Select --</option>
+              <option value="chest">Chest</option>
+              <option value="back">Back</option>
+              <option value="shoulders">Shoulders</option>
+              <option value="biceps">Biceps</option>
+              <option value="triceps">Triceps</option>
+              <option value="legs">Legs</option>
+              <option value="glutes">Glutes</option>
+              <option value="abs">Abs</option>
+              <option value="forearms">Forearms</option>
+              <option value="calves">Calves</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="exerciseName">Exercise</label>
+            <select id="exerciseName" required>
+              <option value="" disabled selected>-- Select a muscle group first --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="exerciseWeight">Weight (kg)</label>
+            <input type="number" id="exerciseWeight" step="0.5" placeholder="e.g. 60" required />
+          </div>
+
+          <div class="form-group">
+            <label for="exerciseSets">Sets</label>
+            <input type="number" id="exerciseSets" min="1" placeholder="e.g. 4" required />
+          </div>
+
+          <div class="form-group">
+            <label for="exerciseReps">Reps</label>
+            <input type="number" id="exerciseReps" min="1" placeholder="e.g. 10" required />
+          </div>
+
+          <div class="form-group">
+            <label>Date</label>
+            <div class="date-toggle">
+              <label><input type="radio" name="dateOption" value="now" checked onchange="toggleDateInput()" /> Today</label>
+              <label><input type="radio" name="dateOption" value="manual" onchange="toggleDateInput()" /> Choose Date</label>
+            </div>
+            <input type="date" id="exerciseDate" style="display:none;" />
+          </div>
+
+          <button type="submit">Save Exercise</button>
+        </form>
+
+        <div class="workout-history">
+          <h3>Workout History</h3>
+          <div class="form-group">
+            <label for="filterMuscle">Filter by Muscle Group</label>
+            <select id="filterMuscle">
+              <option value="all">All</option>
+              <option value="chest">Chest</option>
+              <option value="back">Back</option>
+              <option value="shoulders">Shoulders</option>
+              <option value="biceps">Biceps</option>
+              <option value="triceps">Triceps</option>
+              <option value="legs">Legs</option>
+              <option value="glutes">Glutes</option>
+              <option value="abs">Abs</option>
+              <option value="forearms">Forearms</option>
+              <option value="calves">Calves</option>
+            </select>
+          </div>
+          <div id="workoutHistoryList"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 calorieCounter. Built for fitness and nutrition enthusiasts.</p>
+  </footer>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="script/firebaseStorage.js"></script>
+  <script src="script/loadHeader.js"></script>
+  <script src="script/dropdownMenu.js"></script>
+  <script src="script/workout.js"></script>
+</body>
+</html>
+
+

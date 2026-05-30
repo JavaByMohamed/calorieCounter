@@ -7,12 +7,197 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <header></header> <!-- Header will be dynamically loaded here -->
+    <header></header>
 
   <main>
-    <section class="intro">
+    <!-- Active User Bar -->
+    <section class="active-user-bar" id="activeUserBar" style="display:none;">
+      <span>👤 Logged in as <strong id="activeUserName"></strong></span>
+      <button id="logoutBtn" class="logout-btn">Log Out</button>
+    </section>
+
+    <!-- Login / Create Account (shown when not logged in) -->
+    <section class="intro" id="loginSection">
+      <h2>Welcome to CalorieCounter 👋</h2>
+      <p>Log in or create your account to start tracking your nutrition and workouts.</p>
+
+      <div class="login-form">
+        <div class="form-group">
+          <label for="loginUsername">Username or Email</label>
+          <input type="text" id="loginUsername" placeholder="Enter your username or email" />
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" placeholder="Enter your password" />
+        </div>
+        <div class="login-buttons">
+          <button id="loginBtn">🔑 Log In</button>
+          <button id="showCreateBtn" class="secondary-btn">+ Create Account</button>
+        </div>
+        <p class="forgot-password-link"><a href="#" id="forgotPasswordLink">Forgot your password?</a></p>
+      </div>
+
+      <!-- Forgot Password Form (hidden by default) -->
+      <div id="forgotPasswordForm" style="display:none;" class="new-user-form">
+        <h4>🔒 Reset Your Password</h4>
+        <p>Enter the email address associated with your account. We'll send a verification code to reset your password.</p>
+        <div class="form-group">
+          <label for="resetEmail">Email Address</label>
+          <input type="email" id="resetEmail" placeholder="Enter your registered email" required />
+        </div>
+        <button id="sendResetCodeBtn">📧 Send Reset Code</button>
+        <button id="cancelResetBtn" type="button">Cancel</button>
+
+        <!-- Step 2: Enter code & new password (shown after code is sent) -->
+        <div id="resetCodeSection" style="display:none; margin-top:15px;">
+          <div class="verification-notice">
+            <p>✅ A 6-digit verification code has been sent to your email.</p>
+            <p class="sim-notice">⚠️ <em>Demo mode: The code is shown below since there's no email server.</em></p>
+            <p class="sim-code" id="resetCodeDisplay"></p>
+          </div>
+          <div class="form-group">
+            <label for="resetCode">Verification Code</label>
+            <input type="text" id="resetCode" placeholder="Enter 6-digit code" maxlength="6" required />
+          </div>
+          <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <input type="password" id="newPassword" placeholder="Enter new password" required />
+          </div>
+          <div class="form-group">
+            <label for="newPasswordConfirm">Confirm New Password</label>
+            <input type="password" id="newPasswordConfirm" placeholder="Repeat new password" required />
+          </div>
+          <button id="confirmResetBtn">🔑 Reset Password</button>
+        </div>
+      </div>
+
+      <!-- Email Verification (shown after account creation) -->
+      <div id="emailVerificationForm" style="display:none;" class="new-user-form">
+        <h4>📧 Verify Your Email</h4>
+        <div class="verification-notice">
+          <p>A 6-digit verification code has been sent to <strong id="verifyEmailDisplay"></strong>.</p>
+          <p class="sim-notice">⚠️ <em>Demo mode: The code is shown below since there's no email server.</em></p>
+          <p class="sim-code" id="verifyCodeDisplay"></p>
+        </div>
+        <div class="form-group">
+          <label for="verifyCode">Enter Verification Code</label>
+          <input type="text" id="verifyCode" placeholder="Enter 6-digit code" maxlength="6" required />
+        </div>
+        <button id="confirmVerifyBtn">✅ Verify & Complete Registration</button>
+        <button id="resendVerifyBtn" type="button" class="secondary-btn">🔄 Resend Code</button>
+      </div>
+
+      <!-- Create account (hidden by default) -->
+      <div id="createAccountForm" style="display:none;" class="new-user-form">
+        <h4>Create Your Account</h4>
+        <div class="form-group">
+          <label for="createUsername">Username</label>
+          <input type="text" id="createUsername" placeholder="e.g. John" required />
+        </div>
+        <div class="form-group">
+          <label for="createEmail">Email</label>
+          <input type="email" id="createEmail" placeholder="e.g. john@example.com" required />
+        </div>
+        <div class="form-group">
+          <label for="createPassword">Password</label>
+          <input type="password" id="createPassword" placeholder="Choose a password" required />
+        </div>
+        <div class="form-group">
+          <label for="createPasswordConfirm">Confirm Password</label>
+          <input type="password" id="createPasswordConfirm" placeholder="Repeat your password" required />
+        </div>
+        <div class="form-group">
+          <label>Health Conditions <small>(affects calorie recommendations)</small></label>
+          <div class="checkbox-group">
+            <label><input type="checkbox" id="condHypothyroid" value="hypothyroid" /> Hypothyroidism (underactive thyroid)</label>
+            <label><input type="checkbox" id="condHyperthyroid" value="hyperthyroid" /> Hyperthyroidism (overactive thyroid)</label>
+            <label><input type="checkbox" id="condDiabetes" value="diabetes" /> Diabetes</label>
+            <label><input type="checkbox" id="condHighBP" value="highBloodPressure" /> High Blood Pressure</label>
+          </div>
+          <div class="health-info-box">
+            <h5>ℹ️ How do these conditions affect your nutrition goals?</h5>
+            <details>
+              <summary><strong>🦋 Hypothyroidism</strong> (underactive thyroid)</summary>
+              <p>An underactive thyroid slows your metabolism, meaning your body burns fewer calories at rest. Eating the same amount as someone without the condition can lead to weight gain.</p>
+              <ul>
+                <li><strong>Calories:</strong> −200 kcal/day</li>
+                <li><strong>Carbs:</strong> −30g/day</li>
+                <li><strong>Fiber:</strong> +5g/day (helps digestion &amp; satiety)</li>
+              </ul>
+            </details>
+            <details>
+              <summary><strong>🦋 Hyperthyroidism</strong> (overactive thyroid)</summary>
+              <p>An overactive thyroid speeds up your metabolism dramatically, causing rapid weight loss and muscle breakdown if not compensated with extra nutrition.</p>
+              <ul>
+                <li><strong>Calories:</strong> +300 kcal/day</li>
+                <li><strong>Protein:</strong> +20g/day (prevents muscle loss)</li>
+                <li><strong>Carbs:</strong> +30g/day (extra energy)</li>
+              </ul>
+            </details>
+            <details>
+              <summary><strong>🩸 Diabetes</strong></summary>
+              <p>Diabetes impairs your body's ability to regulate blood sugar. High-carb meals cause dangerous blood sugar spikes. A lower-carb, higher-fiber diet helps maintain stable glucose levels.</p>
+              <ul>
+                <li><strong>Carbs:</strong> −50g/day (reduces blood sugar spikes)</li>
+                <li><strong>Fiber:</strong> +5g/day (slows sugar absorption)</li>
+                <li><strong>Fat:</strong> −10g/day (reduces cardiovascular risk)</li>
+              </ul>
+            </details>
+            <details>
+              <summary><strong>❤️ High Blood Pressure</strong></summary>
+              <p>High blood pressure is worsened by excess sodium and saturated fat. Reducing fat intake and keeping sodium below 2300mg/day helps protect your heart and blood vessels.</p>
+              <ul>
+                <li><strong>Fat:</strong> −10g/day</li>
+                <li><strong>Sodium:</strong> Limit to &lt;2300mg/day (not tracked but recommended)</li>
+              </ul>
+            </details>
+          </div>
+        </div>
+        <button id="createAccountBtn">💾 Create Account</button>
+        <button id="cancelCreateBtn" type="button">Cancel</button>
+      </div>
+    </section>
+
+    <!-- Welcome message (shown when logged in) -->
+    <section class="intro" id="welcomeSection" style="display:none;">
       <h2>Track Your Calories, Achieve Your Goals</h2>
-      <p>CalorieCounter is your personal nutrition assistant. Effortlessly log your meals, track your calorie intake, and gain insights into your diet. Start your journey towards a healthier you today!</p>
+      <p>CalorieCounter is your personal nutrition assistant. Effortlessly log your meals, track your calorie intake, and gain insights into your diet.</p>
+    </section>
+
+    <section class="quick-nav">
+      <h2>Quick Access</h2>
+      <div class="nav-cards">
+        <a href="bmi-bmr.html" class="nav-card">
+          <span class="nav-card-icon">⚖️</span>
+          <h3>BMI & BMR</h3>
+          <p>Calculate your body mass index and metabolic rate</p>
+        </a>
+        <a href="ingredients.html" class="nav-card">
+          <span class="nav-card-icon">🥦</span>
+          <h3>Ingredients</h3>
+          <p>Manage your ingredient database</p>
+        </a>
+        <a href="meal.html" class="nav-card">
+          <span class="nav-card-icon">🍽️</span>
+          <h3>Add a Meal</h3>
+          <p>Log your meals and track calories</p>
+        </a>
+        <a href="workout.html" class="nav-card">
+          <span class="nav-card-icon">💪</span>
+          <h3>Workout Tracker</h3>
+          <p>Track exercises, sets, reps & weights</p>
+        </a>
+        <a href="meal-history.html" class="nav-card">
+          <span class="nav-card-icon">📋</span>
+          <h3>Meal History</h3>
+          <p>See what everyone is eating for inspiration</p>
+        </a>
+        <a href="daily-tracker.html" class="nav-card">
+          <span class="nav-card-icon">📊</span>
+          <h3>My Daily Tracker</h3>
+          <p>Your personal daily meals, macros & progress</p>
+        </a>
+      </div>
     </section>
   </main>
 
@@ -20,7 +205,16 @@
     <p>© 2025 calorieCounter. Built for fitness and nutrition enthusiasts.</p>
   </footer>
 
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <script src="script/firebaseStorage.js"></script>
   <script src="script/loadHeader.js"></script>
   <script src="script/dropdownMenu.js"></script>
+  <script src="script/emailService.js"></script>
+  <script src="script/homeUser.js"></script>
 </body>
 </html>

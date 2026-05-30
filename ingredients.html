@@ -13,32 +13,60 @@
     <section class="manage-ingredients">
       <h3>Manage Ingredients</h3>
       <p>You can edit or delete ingredients from the list below.</p>
-      <form id="addIngredientForm">
-        <div class="form-group">
-          <label for="ingredientName">Ingredient Name</label>
-          <input type="text" id="ingredientName" placeholder="e.g. Salmon" required />
-        </div>
-        <div class="form-group">
-          <label for="ingredientCalories">Calories (per 100g)</label>
-          <input type="number" id="ingredientCalories" placeholder="e.g. 208" step="0.01" required />
-        </div>
-        <div class="form-group">
-          <label for="ingredientProtein">Protein (g per 100g)</label>
-          <input type="number" id="ingredientProtein" placeholder="e.g. 20.5" step="0.01" required />
-        </div>
-        <div class="form-group">
-          <label for="ingredientFat">Fat (g per 100g)</label>
-          <input type="number" id="ingredientFat" placeholder="e.g. 13.2" step="0.01" required />
-        </div>
-        <div class="form-group">
-          <label for="ingredientCarbs">Carbs (g per 100g)</label>
-          <input type="number" id="ingredientCarbs" placeholder="e.g. 0.5" step="0.01" required />
-        </div>
-        <button type="submit">Add Ingredient</button>
-      </form>
 
-      <div id="ingredientList">
-        <!-- Ingredient list will be dynamically populated -->
+      <div class="toggle-buttons">
+        <button id="toggleFormBtn" class="toggle-btn active">Add Ingredient</button>
+        <button id="toggleListBtn" class="toggle-btn active">View Ingredients</button>
+        <button id="toggleBothBtn" class="toggle-btn">Show Both</button>
+        <button id="viewCloudBtn" class="toggle-btn cloud-btn">☁️ View Cloud Data</button>
+      </div>
+
+      <!-- Cloud Data Modal -->
+      <div id="cloudModal" class="cloud-modal" style="display:none;">
+        <div class="cloud-modal-content">
+          <div class="cloud-modal-header">
+            <h4>☁️ Cloud Storage Data</h4>
+            <button id="closeCloudModal" class="close-modal-btn">&times;</button>
+          </div>
+          <pre id="cloudDataOutput">Loading...</pre>
+        </div>
+      </div>
+
+      <div id="addIngredientSection">
+        <form id="addIngredientForm">
+          <div class="form-group">
+            <label for="ingredientName">Ingredient Name</label>
+            <input type="text" id="ingredientName" placeholder="e.g. Salmon" required />
+          </div>
+          <div class="form-group">
+            <label for="ingredientCalories">Calories (per 100g)</label>
+            <input type="number" id="ingredientCalories" placeholder="e.g. 208" step="0.01" required />
+          </div>
+          <div class="form-group">
+            <label for="ingredientProtein">Protein (g per 100g)</label>
+            <input type="number" id="ingredientProtein" placeholder="e.g. 20.5" step="0.01" required />
+          </div>
+          <div class="form-group">
+            <label for="ingredientFat">Fat (g per 100g)</label>
+            <input type="number" id="ingredientFat" placeholder="e.g. 13.2" step="0.01" required />
+          </div>
+          <div class="form-group">
+            <label for="ingredientCarbs">Carbs (g per 100g)</label>
+            <input type="number" id="ingredientCarbs" placeholder="e.g. 0.5" step="0.01" required />
+          </div>
+          <div class="form-group">
+            <label for="ingredientFiber">Fiber (g per 100g)</label>
+            <input type="number" id="ingredientFiber" placeholder="e.g. 2.6" step="0.01" value="0" />
+          </div>
+          <button type="submit">Add Ingredient</button>
+        </form>
+      </div>
+
+      <div id="ingredientListSection">
+        <h4>Ingredient List</h4>
+        <div id="ingredientList">
+          <!-- Ingredient list will be dynamically populated -->
+        </div>
       </div>
     </section>
   </main>
@@ -47,8 +75,71 @@
     <p>© 2025 calorieCounter. Built for fitness and nutrition enthusiasts.</p>
   </footer>
 
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="script/firebaseStorage.js"></script>
   <script src="script/loadHeader.js"></script>
   <script src="script/dropdownMenu.js"></script>
   <script type="module" src="script/ingredientManagement.js"></script>
+  <script>
+    const toggleFormBtn = document.getElementById("toggleFormBtn");
+    const toggleListBtn = document.getElementById("toggleListBtn");
+    const toggleBothBtn = document.getElementById("toggleBothBtn");
+    const formSection = document.getElementById("addIngredientSection");
+    const listSection = document.getElementById("ingredientListSection");
+
+    toggleFormBtn.addEventListener("click", () => {
+      formSection.style.display = formSection.style.display === "none" ? "block" : "none";
+      toggleFormBtn.classList.toggle("active");
+    });
+
+    toggleListBtn.addEventListener("click", () => {
+      listSection.style.display = listSection.style.display === "none" ? "block" : "none";
+      toggleListBtn.classList.toggle("active");
+    });
+
+    toggleBothBtn.addEventListener("click", () => {
+      formSection.style.display = "block";
+      listSection.style.display = "block";
+      toggleFormBtn.classList.add("active");
+      toggleListBtn.classList.add("active");
+    });
+
+    // Cloud data viewer
+    const viewCloudBtn = document.getElementById("viewCloudBtn");
+    const cloudModal = document.getElementById("cloudModal");
+    const closeCloudModal = document.getElementById("closeCloudModal");
+    const cloudDataOutput = document.getElementById("cloudDataOutput");
+
+    viewCloudBtn.addEventListener("click", async () => {
+      cloudModal.style.display = "flex";
+      cloudDataOutput.textContent = "Loading...";
+
+      try {
+        const { loadFromCloud, isCloudEnabled } = await import('./script/cloudStorage.js');
+        if (!isCloudEnabled()) {
+          cloudDataOutput.textContent = "⚠️ Cloud storage is not configured.\n\nAdd your JSONBin.io API key in script/cloudStorage.js";
+          return;
+        }
+        const data = await loadFromCloud();
+        if (data) {
+          cloudDataOutput.textContent = JSON.stringify(data, null, 2);
+        } else {
+          cloudDataOutput.textContent = "No data found in cloud yet. Add an ingredient to create your first sync.";
+        }
+      } catch (err) {
+        cloudDataOutput.textContent = "Error loading cloud data: " + err.message;
+      }
+    });
+
+    closeCloudModal.addEventListener("click", () => {
+      cloudModal.style.display = "none";
+    });
+
+    cloudModal.addEventListener("click", (e) => {
+      if (e.target === cloudModal) cloudModal.style.display = "none";
+    });
+  </script>
 </body>
 </html>
