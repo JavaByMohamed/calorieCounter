@@ -1,4 +1,4 @@
-// Workout Tracker - stores data per username in localStorage
+// Workout Tracker - stores data in Firebase database
 
 // 🏋️ Predefined exercise database by muscle group
 const exerciseDatabase = {
@@ -63,15 +63,31 @@ const exerciseDatabase = {
 };
 
 let currentUser = "";
+let workoutsCache = []; // In-memory cache
+
+// Cookie helper
+function getWorkoutCookie(name) {
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : "";
+}
 
 // Populate username dropdown with active user only
 function populateWorkoutUserDropdown() {
   const select = document.getElementById("workoutUsername");
   if (!select) return;
-  const activeUser = localStorage.getItem("activeUser") || "";
-  const users = JSON.parse(localStorage.getItem("userProfiles")) || {};
-  if (activeUser && users[activeUser]) {
-    select.innerHTML = `<option value="${activeUser}">${users[activeUser].name}</option>`;
+  const activeUser = getWorkoutCookie("activeUser");
+  if (activeUser) {
+    if (typeof cloudLoadUser === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+      cloudLoadUser(activeUser).then(user => {
+        if (user) {
+          select.innerHTML = `<option value="${activeUser}">${user.name}</option>`;
+        } else {
+          select.innerHTML = `<option value="${activeUser}">${activeUser}</option>`;
+        }
+      });
+    } else {
+      select.innerHTML = `<option value="${activeUser}">${activeUser}</option>`;
+    }
   } else {
     select.innerHTML = '<option value="">-- Not logged in --</option>';
   }
@@ -83,32 +99,30 @@ document.getElementById("exerciseForm").addEventListener("submit", saveExercise)
 document.getElementById("filterMuscle").addEventListener("change", renderHistory);
 document.getElementById("muscleGroup").addEventListener("change", populateExerciseDropdown);
 
-function loadUser() {
+async function loadUser() {
   const username = document.getElementById("workoutUsername").value;
   if (!username) {
     alert("Please select a user.");
     return;
   }
   currentUser = username;
-  localStorage.setItem("lastSelectedUser", username);
+  // Load workouts from Firebase
+  if (typeof cloudLoadWorkouts === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    workoutsCache = await cloudLoadWorkouts(currentUser) || [];
+  }
   document.getElementById("workoutContent").style.display = "block";
   renderHistory();
 }
 
-function getStorageKey() {
-  return `workout_${currentUser}`;
-}
-
 function getWorkouts() {
-  const data = localStorage.getItem(getStorageKey());
-  return data ? JSON.parse(data) : [];
+  return workoutsCache;
 }
 
-function saveWorkouts(workouts) {
-  localStorage.setItem(getStorageKey(), JSON.stringify(workouts));
-  // Sync to Firebase cloud
+async function saveWorkoutsToDb(workouts) {
+  workoutsCache = workouts;
   if (typeof cloudSaveWorkouts === "function" && typeof isFirebaseReady === "function" && isFirebaseReady() && currentUser) {
-    cloudSaveWorkouts(currentUser, workouts);
+    await cloudSaveWorkouts(currentUser, workouts);
+    console.log("☁️ Workouts saved to database");
   }
 }
 
@@ -125,7 +139,7 @@ function getSelectedDate() {
   return new Date().toISOString().split("T")[0];
 }
 
-function saveExercise(e) {
+async function saveExercise(e) {
   e.preventDefault();
   const date = getSelectedDate();
   if (!date) {
@@ -149,7 +163,7 @@ function saveExercise(e) {
 
   const workouts = getWorkouts();
   workouts.push(exercise);
-  saveWorkouts(workouts);
+  await saveWorkoutsToDb(workouts);
 
   document.getElementById("exerciseForm").reset();
   document.getElementById("exerciseDate").style.display = "none";
@@ -200,10 +214,10 @@ function renderHistory() {
   container.innerHTML = html;
 }
 
-function deleteExercise(id) {
+async function deleteExercise(id) {
   let workouts = getWorkouts();
   workouts = workouts.filter((w) => w.id !== id);
-  saveWorkouts(workouts);
+  await saveWorkoutsToDb(workouts);
   renderHistory();
 }
 
@@ -267,17 +281,21 @@ document.getElementById("exerciseName").addEventListener("change", function () {
   }
 });
 
-// Custom exercise persistence
+// Custom exercise persistence (in-memory, derived from workout history)
 function getCustomExercises(muscleGroup) {
-  const data = JSON.parse(localStorage.getItem("customExercises") || "{}");
-  return data[muscleGroup] || [];
+  // Extract unique exercise names from workout history that aren't in the default database
+  const defaults = exerciseDatabase[muscleGroup] || [];
+  const workouts = getWorkouts();
+  const custom = new Set();
+  workouts.forEach(w => {
+    if (w.muscleGroup === muscleGroup && !defaults.includes(w.name)) {
+      custom.add(w.name);
+    }
+  });
+  return [...custom];
 }
 
 function saveCustomExercise(muscleGroup, name) {
-  const data = JSON.parse(localStorage.getItem("customExercises") || "{}");
-  if (!data[muscleGroup]) data[muscleGroup] = [];
-  if (!data[muscleGroup].includes(name)) {
-    data[muscleGroup].push(name);
-    localStorage.setItem("customExercises", JSON.stringify(data));
-  }
+  // Custom exercises are automatically preserved because they're saved as part of workout entries
+  // No additional storage needed
 }

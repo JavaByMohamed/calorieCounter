@@ -1,66 +1,87 @@
 // ===== User Profiles & Daily Tracker =====
-// Only shows the currently logged-in (active) user's data — fully private.
-const USERS_KEY = "userProfiles";
-const MEAL_HISTORY_KEY = "mealHistory";
-const ACTIVE_USER_KEY = "activeUser";
+// All data lives in Firebase. No localStorage/sessionStorage.
+// Active user session stored in a cookie.
 
-// --- User Profile helpers ---
-function getUsers() {
-  return JSON.parse(localStorage.getItem(USERS_KEY)) || {};
+// --- Cookie helpers ---
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : "";
 }
 
-function saveUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
+// --- User Profile helpers (Firebase only) ---
+async function getUsers() {
+  if (typeof cloudLoadAllUsers === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    const users = await cloudLoadAllUsers();
+    return users || {};
+  }
+  return {};
+}
+
+async function saveUser(key, userData) {
+  if (typeof cloudSaveUser === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    await cloudSaveUser(key, userData);
+    console.log(`☁️ User "${key}" saved to database`);
+  }
 }
 
 function getActiveUsername() {
-  return localStorage.getItem(ACTIVE_USER_KEY) || "";
+  return getCookie("activeUser");
 }
 
-function getActiveUser() {
+async function getActiveUser() {
   const key = getActiveUsername();
   if (!key) return null;
-  const users = getUsers();
-  return users[key] || null;
+  if (typeof cloudLoadUser === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    const user = await cloudLoadUser(key);
+    return user || null;
+  }
+  return null;
 }
 
-function updateUserGoals(username, goals) {
-  const users = getUsers();
+async function updateUserGoals(username, goals) {
   const key = username.toLowerCase();
-  if (!users[key]) return;
-  users[key].goals = {
-    calories: parseFloat(goals.calories) || 2000,
-    caloriesMin: users[key].goals?.caloriesMin || 0,
-    caloriesMax: users[key].goals?.caloriesMax || 0,
-    protein: parseFloat(goals.protein) || 150,
-    fat: parseFloat(goals.fat) || 65,
-    carbs: parseFloat(goals.carbs) || 250,
-    fiber: parseFloat(goals.fiber) || 30,
+  const user = await getActiveUser();
+  if (!user) return;
+  user.goals = {
+    calories: parseFloat(goals.calories) || 0,
+    caloriesMin: user.goals?.caloriesMin || 0,
+    caloriesMax: user.goals?.caloriesMax || 0,
+    protein: parseFloat(goals.protein) || 0,
+    fat: parseFloat(goals.fat) || 0,
+    carbs: parseFloat(goals.carbs) || 0,
+    fiber: parseFloat(goals.fiber) || 0,
   };
-  saveUsers(users);
+  await saveUser(key, user);
 }
 
-// --- Meal History ---
-function getMealHistory() {
-  return JSON.parse(localStorage.getItem(MEAL_HISTORY_KEY)) || [];
+// --- Meal History (Firebase only) ---
+async function getMealHistory() {
+  if (typeof cloudLoadAllMealHistory === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    const meals = await cloudLoadAllMealHistory();
+    return meals || [];
+  }
+  return [];
 }
 
-function getMealsForUserAndDate(username, dateStr) {
-  return getMealHistory().filter((meal) => {
+function getMealsForUserAndDate(allMeals, username, dateStr) {
+  return allMeals.filter((meal) => {
     const mealUser = (meal.username || "").toLowerCase();
     const mealDate = meal.date ? meal.date.substring(0, 10) : "";
     return mealUser === username.toLowerCase() && mealDate === dateStr;
   });
 }
 
-// --- Workout History ---
-function getWorkoutsForUser(username) {
-  const data = localStorage.getItem(`workout_${username}`);
-  return data ? JSON.parse(data) : [];
+// --- Workout History (Firebase only) ---
+async function getWorkoutsForUser(username) {
+  if (typeof cloudLoadWorkouts === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    const workouts = await cloudLoadWorkouts(username);
+    return workouts || [];
+  }
+  return [];
 }
 
-function getWorkoutsForUserAndDate(username, dateStr) {
-  return getWorkoutsForUser(username).filter((w) => w.date === dateStr);
+function getWorkoutsForDate(workouts, dateStr) {
+  return workouts.filter((w) => w.date === dateStr);
 }
 
 // --- Compute daily totals (uses per-serving when servings > 1) ---
@@ -186,7 +207,6 @@ function renderMacroProgress(goals, consumed) {
     const minPct = caloriesMax > 0 ? (caloriesMin / caloriesMax) * 100 : 0;
     const belowMin = calEaten < caloriesMin;
     const overMax = calEaten > caloriesMax;
-    const inRange = !belowMin && !overMax;
     const barColor = overMax ? '#e74c3c' : (belowMin ? '#f39c12' : '#27ae60');
 
     let statusText;
@@ -381,15 +401,15 @@ function renderUserStats(user) {
 }
 
 // ==================== WEEK SUMMARY ====================
-function renderWeekSummary(username, currentDate) {
+function renderWeekSummaryAsync(username, currentDate, allMeals, allWorkouts) {
   const container = document.getElementById("weekSummary");
   let html = '<div class="week-grid">';
 
   for (let i = 6; i >= 0; i--) {
     const dateStr = shiftDate(currentDate, -i);
-    const meals = getMealsForUserAndDate(username, dateStr);
+    const meals = getMealsForUserAndDate(allMeals, username, dateStr);
     const totals = computeDayTotals(meals);
-    const workouts = getWorkoutsForUserAndDate(username, dateStr);
+    const workouts = getWorkoutsForDate(allWorkouts, dateStr);
     const isToday = dateStr === getTodayStr();
     const dayLabel = new Date(dateStr + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
 
@@ -408,12 +428,20 @@ function renderWeekSummary(username, currentDate) {
 }
 
 // ==================== MAIN REFRESH ====================
-function refreshTracker() {
+async function refreshTracker() {
   const username = getActiveUsername();
-  const user = getActiveUser();
 
-  if (!username || !user) {
-    // Not logged in
+  if (!username) {
+    notLoggedInSection.style.display = "block";
+    profileSection.style.display = "none";
+    trackerContent.style.display = "none";
+    userStatsSection.style.display = "none";
+    return;
+  }
+
+  // Load user from Firebase
+  const user = await getActiveUser();
+  if (!user) {
     notLoggedInSection.style.display = "block";
     profileSection.style.display = "none";
     trackerContent.style.display = "none";
@@ -426,12 +454,13 @@ function refreshTracker() {
   profileSection.style.display = "block";
   document.getElementById("profileUsername").textContent = user.name;
 
-  // Fill goals
-  document.getElementById("editCalories").value = user.goals.calories;
-  document.getElementById("editProtein").value = user.goals.protein;
-  document.getElementById("editFat").value = user.goals.fat;
-  document.getElementById("editCarbs").value = user.goals.carbs;
-  document.getElementById("editFiber").value = user.goals.fiber;
+  // Fill goals from database
+  const goals = user.goals || { calories: 0, caloriesMin: 0, caloriesMax: 0, protein: 0, fat: 0, carbs: 0, fiber: 0 };
+  document.getElementById("editCalories").value = goals.calories || 0;
+  document.getElementById("editProtein").value = goals.protein || 0;
+  document.getElementById("editFat").value = goals.fat || 0;
+  document.getElementById("editCarbs").value = goals.carbs || 0;
+  document.getElementById("editFiber").value = goals.fiber || 0;
 
   // User stats (BMI/BMR/Diet)
   renderUserStats(user);
@@ -441,24 +470,29 @@ function refreshTracker() {
   if (!trackerDate.value) trackerDate.value = getTodayStr();
 
   const dateStr = trackerDate.value;
-  const meals = getMealsForUserAndDate(username, dateStr);
-  const consumed = computeDayTotals(meals);
-  const workouts = getWorkoutsForUserAndDate(username, dateStr);
+
+  // Load meal history and workouts from Firebase
+  const allMeals = await getMealHistory();
+  const dayMealsData = getMealsForUserAndDate(allMeals, username, dateStr);
+  const consumed = computeDayTotals(dayMealsData);
+
+  const allWorkouts = await getWorkoutsForUser(username);
+  const dayWorkoutsData = getWorkoutsForDate(allWorkouts, dateStr);
 
   // Donut chart
   const canvas = document.getElementById("macroDonut");
-  const macros = drawDonutChart(canvas, consumed, user.goals);
+  const macros = drawDonutChart(canvas, consumed, goals);
   renderDonutLegend(macros);
 
   // Progress bars
-  renderMacroProgress(user.goals, consumed);
+  renderMacroProgress(goals, consumed);
 
   // Day meals & workouts
-  renderDayMeals(meals);
-  renderDayWorkouts(workouts);
+  renderDayMeals(dayMealsData);
+  renderDayWorkouts(dayWorkoutsData);
 
-  // Week summary
-  renderWeekSummary(username, dateStr);
+  // Week summary (needs all meals for the week)
+  renderWeekSummaryAsync(username, dateStr, allMeals, allWorkouts);
 }
 
 // --- Event Listeners ---
@@ -483,17 +517,17 @@ document.getElementById("nextDayBtn").addEventListener("click", () => {
   }
 });
 
-updateGoalsBtn.addEventListener("click", () => {
+updateGoalsBtn.addEventListener("click", async () => {
   const username = getActiveUsername();
   if (!username) return;
-  updateUserGoals(username, {
+  await updateUserGoals(username, {
     calories: document.getElementById("editCalories").value,
     protein: document.getElementById("editProtein").value,
     fat: document.getElementById("editFat").value,
     carbs: document.getElementById("editCarbs").value,
     fiber: document.getElementById("editFiber").value,
   });
-  alert("Goals updated!");
+  alert("Goals updated and saved to database!");
   refreshTracker();
 });
 

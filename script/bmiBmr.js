@@ -6,14 +6,30 @@ const bmiAdvice = document.getElementById("bmiAdvice");
 const bmrValue = document.getElementById("bmrValue");
 const bmrAdvice = document.getElementById("bmrAdvice");
 
+// Cookie helper
+function getBmiCookie(name) {
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
 // Populate user dropdown with active user
 function populateBmiUserDropdown() {
   const select = document.getElementById("bmiUsername");
   if (!select) return;
-  const activeUser = localStorage.getItem("activeUser") || "";
-  const users = JSON.parse(localStorage.getItem("userProfiles")) || {};
-  if (activeUser && users[activeUser]) {
-    select.innerHTML = `<option value="${activeUser}">${users[activeUser].name}</option>`;
+  const activeUser = getBmiCookie("activeUser");
+  if (activeUser) {
+    // Load user name from Firebase if available
+    if (typeof cloudLoadUser === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+      cloudLoadUser(activeUser).then(user => {
+        if (user) {
+          select.innerHTML = `<option value="${activeUser}">${user.name}</option>`;
+        } else {
+          select.innerHTML = `<option value="${activeUser}">${activeUser}</option>`;
+        }
+      });
+    } else {
+      select.innerHTML = `<option value="${activeUser}">${activeUser}</option>`;
+    }
   } else {
     select.innerHTML = '<option value="">-- Not logged in --</option>';
   }
@@ -90,23 +106,24 @@ bmiBmrForm.addEventListener("submit", function (e) {
     bodyStats: { age, height, weight, gender, activityLabel },
   };
 
-  // Auto-update profile if logged in
-  const activeUser = localStorage.getItem("activeUser") || "";
-  if (activeUser) {
-    const users = JSON.parse(localStorage.getItem("userProfiles")) || {};
-    if (users[activeUser]) {
-      users[activeUser].bmi = bmi;
-      users[activeUser].bmiCategory = bmiCat;
-      users[activeUser].bmr = bmr.toFixed(1);
-      users[activeUser].tdee = tdee.toFixed(1);
-      users[activeUser].bodyStats = { age, height, weight, gender, activityLabel };
-      // Update calorie range: BMR (min) to TDEE (max)
-      if (!users[activeUser].goals) users[activeUser].goals = {};
-      users[activeUser].goals.calories = Math.round(tdee);
-      users[activeUser].goals.caloriesMin = Math.round(bmr);
-      users[activeUser].goals.caloriesMax = Math.round(tdee);
-      localStorage.setItem("userProfiles", JSON.stringify(users));
-    }
+  // Auto-update profile if logged in (save to Firebase directly)
+  const activeUser = getBmiCookie("activeUser");
+  if (activeUser && typeof cloudLoadUser === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    cloudLoadUser(activeUser).then(user => {
+      if (user) {
+        user.bmi = bmi;
+        user.bmiCategory = bmiCat;
+        user.bmr = bmr.toFixed(1);
+        user.tdee = tdee.toFixed(1);
+        user.bodyStats = { age, height, weight, gender, activityLabel };
+        if (!user.goals) user.goals = {};
+        user.goals.calories = Math.round(tdee);
+        user.goals.caloriesMin = Math.round(bmr);
+        user.goals.caloriesMax = Math.round(tdee);
+        cloudSaveUser(activeUser, user);
+        console.log(`☁️ BMI/BMR auto-saved to database for "${activeUser}"`);
+      }
+    });
   }
 
   // Show save section if user is selected
@@ -137,29 +154,34 @@ bmiBmrForm.addEventListener("submit", function (e) {
   });
 });
 
-// 💾 Save BMI/BMR/Diet to user profile
-document.getElementById("saveDietBtn").addEventListener("click", function () {
-  const username = document.getElementById("bmiUsername").value || localStorage.getItem("activeUser") || "";
+// 💾 Save BMI/BMR/Diet to user profile (Firebase only)
+document.getElementById("saveDietBtn").addEventListener("click", async function () {
+  const username = document.getElementById("bmiUsername").value || getBmiCookie("activeUser") || "";
   if (!username) {
     alert("Please log in from the Home page to save your diet plan to your profile.");
     return;
   }
 
-  const users = JSON.parse(localStorage.getItem("userProfiles")) || {};
-  if (!users[username]) {
-    alert("User not found. Please create a profile first on the Daily Tracker page.");
+  if (typeof cloudLoadUser !== "function" || typeof isFirebaseReady !== "function" || !isFirebaseReady()) {
+    alert("Database not ready. Please try again in a moment.");
+    return;
+  }
+
+  const user = await cloudLoadUser(username);
+  if (!user) {
+    alert("User not found in database. Please create a profile first on the Home page.");
     return;
   }
 
   const dietPlan = document.getElementById("selectedDietPlan").value;
 
   // Save all stats to user profile
-  users[username].bmi = latestBmiResults.bmi;
-  users[username].bmiCategory = latestBmiResults.bmiCategory;
-  users[username].bmr = latestBmiResults.bmr;
-  users[username].tdee = latestBmiResults.tdee;
-  users[username].dietPlan = dietPlan;
-  users[username].bodyStats = latestBmiResults.bodyStats;
+  user.bmi = latestBmiResults.bmi;
+  user.bmiCategory = latestBmiResults.bmiCategory;
+  user.bmr = latestBmiResults.bmr;
+  user.tdee = latestBmiResults.tdee;
+  user.dietPlan = dietPlan;
+  user.bodyStats = latestBmiResults.bodyStats;
 
   // Also update macro goals based on diet plan and TDEE
   const tdee = parseFloat(latestBmiResults.tdee);
@@ -171,20 +193,21 @@ document.getElementById("saveDietBtn").addEventListener("click", function () {
   };
   const plan = dietMacros[dietPlan] || dietMacros["Balanced Diet (Maintenance)"];
   const bmrVal = parseFloat(latestBmiResults.bmr);
-  users[username].goals = {
+  user.goals = {
     calories: Math.round(tdee),
     caloriesMin: Math.round(bmrVal),
     caloriesMax: Math.round(tdee),
     protein: Math.round((tdee * plan.protein / 100) / 4),
     fat: Math.round((tdee * plan.fat / 100) / 9),
     carbs: Math.round((tdee * plan.carbs / 100) / 4),
-    fiber: users[username].goals?.fiber || 30,
+    fiber: user.goals?.fiber || 30,
   };
 
-  localStorage.setItem("userProfiles", JSON.stringify(users));
-  localStorage.setItem("lastSelectedUser", username);
+  // Save to Firebase only
+  await cloudSaveUser(username, user);
+  console.log(`☁️ Diet plan saved to database for "${username}"`);
 
-  alert(`Saved to ${users[username].name}'s profile!\n\nBMI: ${latestBmiResults.bmi} (${latestBmiResults.bmiCategory})\nBMR: ${latestBmiResults.bmr} kcal (minimum)\nTDEE: ${latestBmiResults.tdee} kcal (maximum)\nDiet: ${dietPlan}\n\nYour allowed calorie range is ${Math.round(bmrVal)}–${Math.round(tdee)} kcal/day.\nDaily macro goals have been auto-calculated.`);
+  alert(`Saved to ${user.name}'s profile!\n\nBMI: ${latestBmiResults.bmi} (${latestBmiResults.bmiCategory})\nBMR: ${latestBmiResults.bmr} kcal (minimum)\nTDEE: ${latestBmiResults.tdee} kcal (maximum)\nDiet: ${dietPlan}\n\nYour allowed calorie range is ${Math.round(bmrVal)}–${Math.round(tdee)} kcal/day.\nDaily macro goals have been auto-calculated.`);
 });
 
 // 🍽️ Diet Options Calculation

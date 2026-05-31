@@ -4,12 +4,11 @@
 // 1. Go to https://jsonbin.io and create a free account
 // 2. Go to API Keys and copy your X-Master-Key
 // 3. Paste it below in JSONBIN_API_KEY
-// 4. On first run, the app will create a bin automatically and save the ID to localStorage
+// 4. On first run, the app will create a bin automatically and save the ID to a cookie
 //
-// If no API key is set, the app will fall back to localStorage only.
+// If no API key is set, the app will fall back to Firebase only.
 
 const JSONBIN_API_KEY = "$2a$10$t/4D4oqS7HjgdAK4oFCEh.edlMkwvaV9j.qoxrcd6o0TUGQZRKq4m"; // <-- Paste your JSONBin.io X-Master-Key here
-const JSONBIN_BIN_ID_KEY = "jsonbin_bin_id"; // localStorage key to store the bin ID
 
 export function isCloudEnabled() {
   return JSONBIN_API_KEY.length > 0;
@@ -29,7 +28,7 @@ async function createBin(data) {
     });
     const result = await response.json();
     if (result.metadata && result.metadata.id) {
-      localStorage.setItem(JSONBIN_BIN_ID_KEY, result.metadata.id);
+      setBinId(result.metadata.id);
       console.log("☁️ Created cloud bin:", result.metadata.id);
       return result.metadata.id;
     }
@@ -39,9 +38,14 @@ async function createBin(data) {
   return null;
 }
 
-// Get the bin ID (from localStorage)
+// Get the bin ID (from cookie)
 function getBinId() {
-  return localStorage.getItem(JSONBIN_BIN_ID_KEY);
+  const match = document.cookie.match(/(?:^|; )jsonbin_bin_id=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
+function setBinId(id) {
+  document.cookie = `jsonbin_bin_id=${encodeURIComponent(id)}; path=/; max-age=31536000; SameSite=Lax`;
 }
 
 // Save data to JSONBin.io

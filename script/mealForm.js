@@ -35,27 +35,13 @@ function populateIngredientDropdown() {
 document.addEventListener("DOMContentLoaded", async () => {
   await syncFromCloud();
   populateIngredientDropdown();
-  loadMealFromStorage();
 });
 
 // 🥗 Meal Form Handling
 const form = document.getElementById("mealForm");
 const output = document.getElementById("mealOutput");
 const ingredientDropdown = document.getElementById("ingredient");
-let mealItems = [];
-
-// 💾 Meal persistence
-function saveMealToStorage() {
-  localStorage.setItem("currentMeal", JSON.stringify(mealItems));
-}
-
-function loadMealFromStorage() {
-  const saved = localStorage.getItem("currentMeal");
-  if (saved) {
-    mealItems = JSON.parse(saved);
-    displayMeal();
-  }
-}
+let mealItems = []; // In-memory only — no localStorage
 
 // 📋 Handle form submission for adding meal items
 form.addEventListener("submit", function (e) {
@@ -91,7 +77,6 @@ form.addEventListener("submit", function (e) {
 
   // Add entry to meal items and update the display
   mealItems.push(entry);
-  saveMealToStorage();
   displayMeal();
   form.reset();
 });
@@ -145,7 +130,7 @@ function displayMeal() {
 
   let total = { calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0 };
 
-  Object.values(groupedItems).forEach((item, index) => {
+  Object.values(groupedItems).forEach((item) => {
     html += `
       <tr>
         <td>${item.name}</td>
@@ -189,7 +174,6 @@ function displayMeal() {
   document.getElementById("clearMealBtn").addEventListener("click", function () {
     if (confirm("Clear all meal items?")) {
       mealItems = [];
-      saveMealToStorage();
       displayMeal();
     }
   });
@@ -219,7 +203,6 @@ function displayMeal() {
 // 🗑️ Function to delete a meal item
 function deleteMealItem(name) {
   mealItems = mealItems.filter((item) => item.name !== name);
-  saveMealToStorage();
   displayMeal();
 }
 
@@ -241,31 +224,28 @@ function editMealItem(name, newAmount) {
     }
     return item;
   });
-  saveMealToStorage();
   displayMeal();
 }
 
-// 💾 Save meal to long-term history
-const MEAL_HISTORY_KEY = "mealHistory";
-
-function getMealHistory() {
-  return JSON.parse(localStorage.getItem(MEAL_HISTORY_KEY)) || [];
+// 💾 Meal history — Firebase only
+async function getMealHistory() {
+  // Try Firebase first
+  if (typeof cloudLoadAllMealHistory === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    const cloudMeals = await cloudLoadAllMealHistory();
+    if (cloudMeals) return cloudMeals;
+  }
+  return [];
 }
 
-function saveMealHistory(history) {
-  localStorage.setItem(MEAL_HISTORY_KEY, JSON.stringify(history));
-  // Also save to cloud if enabled
-  if (isCloudEnabled()) {
-    const cloudData = { mealHistory: history };
-    saveToCloud(cloudData);
-  }
-  // Also save to Firebase if available
+async function saveMealHistory(history) {
+  // Save to Firebase only
   if (typeof cloudSaveAllMealHistory === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
-    cloudSaveAllMealHistory(history);
+    await cloudSaveAllMealHistory(history);
+    console.log("☁️ Meal history saved to database");
   }
 }
 
-document.getElementById("saveMealBtn").addEventListener("click", function () {
+document.getElementById("saveMealBtn").addEventListener("click", async function () {
   if (mealItems.length === 0) {
     alert("No items in the current meal to save.");
     return;
@@ -307,29 +287,29 @@ document.getElementById("saveMealBtn").addEventListener("click", function () {
     perServing: perServing,
   };
 
-  const history = getMealHistory();
+  const history = await getMealHistory();
   history.unshift(savedMeal); // newest first
-  saveMealHistory(history);
+  await saveMealHistory(history);
 
-  alert(`Meal "${mealName}" saved to history!`);
+  alert(`Meal "${mealName}" saved to database!`);
   mealNameInput.value = "";
 
   // Optionally clear current meal
   if (confirm("Clear current meal?")) {
     mealItems = [];
-    saveMealToStorage();
     displayMeal();
   }
 });
 
 // 📅 Add to Today's Tracker — requires login
-document.getElementById("addToTrackerBtn").addEventListener("click", function () {
+document.getElementById("addToTrackerBtn").addEventListener("click", async function () {
   if (mealItems.length === 0) {
     alert("No items in the current meal. Add ingredients first.");
     return;
   }
 
-  const selectedUser = localStorage.getItem("activeUser") || "";
+  // Get active user from cookie
+  const selectedUser = getActiveUserFromCookie();
 
   if (!selectedUser) {
     alert("⚠️ You must be logged in to add meals to your daily tracker.\n\nPlease log in from the Home page first.");
@@ -384,10 +364,15 @@ document.getElementById("addToTrackerBtn").addEventListener("click", function ()
     addedToTracker: true,
   };
 
-  const history = getMealHistory();
+  const history = await getMealHistory();
   history.unshift(trackerEntry);
-  saveMealHistory(history);
+  await saveMealHistory(history);
 
   alert(`✅ "${mealName}" (${servingsEaten} serving${servingsEaten > 1 ? 's' : ''}) added to today's tracker!\n\nView your daily progress on the Daily Tracker page.`);
 });
 
+// Helper: get active user from cookie
+function getActiveUserFromCookie() {
+  const match = document.cookie.match(/(?:^|; )activeUser=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : "";
+}

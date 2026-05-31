@@ -1,17 +1,21 @@
-const MEAL_HISTORY_KEY = "mealHistory";
 const historyOutput = document.getElementById("historyOutput");
 const dailySummary = document.getElementById("dailySummary");
 const filterDate = document.getElementById("filterDate");
 const filterUser = document.getElementById("filterUser");
 
-function getMealHistory() {
-  return JSON.parse(localStorage.getItem(MEAL_HISTORY_KEY)) || [];
+// Firebase-only meal history
+async function getMealHistory() {
+  if (typeof cloudLoadAllMealHistory === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    const meals = await cloudLoadAllMealHistory();
+    return meals || [];
+  }
+  return [];
 }
 
-function saveMealHistory(history) {
-  localStorage.setItem(MEAL_HISTORY_KEY, JSON.stringify(history));
+async function saveMealHistory(history) {
   if (typeof cloudSaveAllMealHistory === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
-    cloudSaveAllMealHistory(history);
+    await cloudSaveAllMealHistory(history);
+    console.log("☁️ Meal history saved to database");
   }
 }
 
@@ -21,8 +25,8 @@ function formatDate(isoString) {
 }
 
 // Populate user filter dropdown
-function populateUserFilter() {
-  const history = getMealHistory();
+async function populateUserFilter() {
+  const history = await getMealHistory();
   const users = [...new Set(history.map((m) => m.username || "unknown").filter(Boolean))];
   filterUser.innerHTML = '<option value="">All Users</option>';
   users.sort().forEach((u) => {
@@ -44,8 +48,8 @@ function getUserColor(username) {
   return colors[Math.abs(hash) % colors.length];
 }
 
-function displayHistory(filterDateStr, filterUsername) {
-  let history = getMealHistory();
+async function displayHistory(filterDateStr, filterUsername) {
+  let history = await getMealHistory();
 
   if (filterDateStr) {
     history = history.filter((meal) => meal.date.startsWith(filterDateStr));
@@ -145,12 +149,12 @@ function displayHistory(filterDateStr, filterUsername) {
 
   // Delete buttons
   document.querySelectorAll(".delete-meal-btn").forEach((btn) => {
-    btn.addEventListener("click", function () {
+    btn.addEventListener("click", async function () {
       const id = parseInt(this.getAttribute("data-id"));
       if (confirm("Delete this saved meal?")) {
-        let h = getMealHistory();
+        let h = await getMealHistory();
         h = h.filter((m) => m.id !== id);
-        saveMealHistory(h);
+        await saveMealHistory(h);
         displayHistory(filterDate.value || null, filterUser.value || null);
       }
     });
@@ -172,6 +176,11 @@ document.getElementById("clearFilterBtn").addEventListener("click", function () 
   displayHistory(null, null);
 });
 
-// Init
-populateUserFilter();
-displayHistory(null, null);
+// Init — wait for Firebase to be ready
+async function initMealHistory() {
+  // Small delay to allow Firebase to initialize
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  await populateUserFilter();
+  await displayHistory(null, null);
+}
+initMealHistory();

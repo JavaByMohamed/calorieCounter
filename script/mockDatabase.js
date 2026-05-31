@@ -70,13 +70,16 @@ const defaultMockNutritionDB = {
   "lychee": { calories: 66, protein: 0.8, fat: 0.4, carbs: 17, fiber: 1.3 },
 };
 
-// Load the database from localStorage or use the default data
-export const mockNutritionDB = JSON.parse(localStorage.getItem("mockNutritionDB")) || { ...defaultMockNutritionDB };
+// The live database starts with defaults, cloud data is merged on sync
+export const mockNutritionDB = { ...defaultMockNutritionDB };
 
-// Save the database to localStorage AND cloud (if configured)
+// Save the database to Firebase (cloud only, no localStorage)
 export function saveMockNutritionDB() {
-  localStorage.setItem("mockNutritionDB", JSON.stringify(mockNutritionDB));
-  if (isCloudEnabled()) {
+  // Save to Firebase if available
+  if (typeof cloudSaveIngredients === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    cloudSaveIngredients(mockNutritionDB);
+    console.log("☁️ Ingredients saved to database");
+  } else if (isCloudEnabled()) {
     saveToCloud(mockNutritionDB);
   }
 }
@@ -93,16 +96,26 @@ export function addIngredient(name, calories, protein, fat, carbs, fiber = 0) {
   saveMockNutritionDB();
 }
 
-// Sync from cloud on startup (if configured)
+// Sync from cloud on startup — merges cloud ingredients with defaults
 export async function syncFromCloud() {
+  // Try Firebase first
+  if (typeof cloudLoadIngredients === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    const cloudData = await cloudLoadIngredients();
+    if (cloudData) {
+      Object.keys(cloudData).forEach((key) => {
+        mockNutritionDB[key] = cloudData[key];
+      });
+      console.log("☁️ Synced ingredients from database");
+      return true;
+    }
+  }
+  // Fallback to JSONBin
   if (!isCloudEnabled()) return false;
   const cloudData = await loadFromCloud();
   if (cloudData) {
-    // Merge cloud data into the local DB
     Object.keys(cloudData).forEach((key) => {
       mockNutritionDB[key] = cloudData[key];
     });
-    localStorage.setItem("mockNutritionDB", JSON.stringify(mockNutritionDB));
     console.log("☁️ Synced ingredients from cloud");
     return true;
   }

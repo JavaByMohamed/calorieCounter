@@ -1,40 +1,66 @@
 // Home page user login / create account logic
-const USERS_KEY = "userProfiles";
-const ACTIVE_USER_KEY = "activeUser";
+// All data saved to Firebase. Session stored in cookie.
 
-function getUsers() {
-  return JSON.parse(localStorage.getItem(USERS_KEY)) || {};
+// --- Cookie helpers ---
+function setCookie(name, value, days = 7) {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; expires=${expires}; SameSite=Lax`;
 }
 
-function saveUsers(users) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  // Sync each user to cloud
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
+function deleteCookie(name) {
+  document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+}
+
+// --- User helpers (Firebase as primary, in-memory cache) ---
+let usersCache = {};
+
+async function loadUsersFromDB() {
+  if (typeof cloudLoadAllUsers === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    const users = await cloudLoadAllUsers();
+    if (users) usersCache = users;
+  }
+  return usersCache;
+}
+
+function getUsers() {
+  return usersCache;
+}
+
+async function saveUsers(users) {
+  usersCache = users;
   if (typeof cloudSaveUser === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
     for (const key in users) {
-      cloudSaveUser(key, users[key]).then(ok => {
-        if (ok) console.log(`☁️ User "${key}" synced to Firebase`);
-        else console.warn(`⚠️ User "${key}" failed to sync to Firebase`);
-      });
+      await cloudSaveUser(key, users[key]);
     }
-  } else {
-    console.warn("⚠️ Firebase not ready — user saved to localStorage only. firebaseReady:", typeof isFirebaseReady === "function" ? isFirebaseReady() : "N/A");
+  }
+}
+
+async function saveOneUser(key, userData) {
+  usersCache[key] = userData;
+  if (typeof cloudSaveUser === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    await cloudSaveUser(key, userData);
+    console.log(`☁️ User "${key}" saved to database`);
   }
 }
 
 function getActiveUser() {
-  return localStorage.getItem(ACTIVE_USER_KEY) || "";
+  return getCookie("activeUser");
 }
 
 function setActiveUser(username) {
-  localStorage.setItem(ACTIVE_USER_KEY, username);
-  localStorage.setItem("lastSelectedUser", username);
+  setCookie("activeUser", username, 30);
 }
 
 function clearActiveUser() {
-  localStorage.removeItem(ACTIVE_USER_KEY);
+  deleteCookie("activeUser");
 }
 
-// Simple hash for password (not cryptographically secure — localStorage demo only)
+// Simple hash for password (not cryptographically secure — demo only)
 function simpleHash(str) {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -67,13 +93,13 @@ const activeUserName = document.getElementById("activeUserName");
 // (refreshHomeUI is defined in the admin panel section above)
 
 // Login — supports username or email
-document.getElementById("loginBtn").addEventListener("click", () => {
+document.getElementById("loginBtn").addEventListener("click", async () => {
   const input = document.getElementById("loginUsername").value.trim().toLowerCase();
   const password = document.getElementById("loginPassword").value;
   if (!input) { alert("Please enter your username or email."); return; }
   if (!password) { alert("Please enter your password."); return; }
 
-  const users = getUsers();
+  const users = await loadUsersFromDB();
   const hashedPw = simpleHash(password);
 
   // Find user by username or email
@@ -109,7 +135,7 @@ document.getElementById("cancelCreateBtn").addEventListener("click", () => {
 });
 
 // Create account — Step 1: Validate and show email verification
-document.getElementById("createAccountBtn").addEventListener("click", () => {
+document.getElementById("createAccountBtn").addEventListener("click", async () => {
   const name = document.getElementById("createUsername").value.trim();
   const email = document.getElementById("createEmail").value.trim().toLowerCase();
   const password = document.getElementById("createPassword").value;
@@ -222,7 +248,7 @@ document.getElementById("createAccountBtn").addEventListener("click", () => {
 });
 
 // Create account — Step 2: Verify email code and complete registration
-document.getElementById("confirmVerifyBtn").addEventListener("click", () => {
+document.getElementById("confirmVerifyBtn").addEventListener("click", async () => {
   const enteredCode = document.getElementById("verifyCode").value.trim();
 
   if (!enteredCode) { alert("Please enter the verification code."); return; }
@@ -231,9 +257,8 @@ document.getElementById("confirmVerifyBtn").addEventListener("click", () => {
     return;
   }
 
-  // Code is correct — save the user
-  const users = getUsers();
-  users[pendingRegistration.key] = {
+  // Code is correct — save the user to Firebase
+  const userData = {
     name: pendingRegistration.name,
     email: pendingRegistration.email,
     password: pendingRegistration.password,
@@ -248,7 +273,8 @@ document.getElementById("confirmVerifyBtn").addEventListener("click", () => {
     emailVerified: true,
     createdAt: pendingRegistration.createdAt,
   };
-  saveUsers(users);
+
+  await saveOneUser(pendingRegistration.key, userData);
   setActiveUser(pendingRegistration.key);
 
   document.getElementById("emailVerificationForm").style.display = "none";
@@ -302,11 +328,11 @@ document.getElementById("cancelResetBtn").addEventListener("click", () => {
 });
 
 // Send reset code
-document.getElementById("sendResetCodeBtn").addEventListener("click", () => {
+document.getElementById("sendResetCodeBtn").addEventListener("click", async () => {
   const email = document.getElementById("resetEmail").value.trim().toLowerCase();
   if (!email) { alert("Please enter your email address."); return; }
 
-  const users = getUsers();
+  const users = await loadUsersFromDB();
   let foundKey = null;
   for (const key in users) {
     if (users[key].email === email) {
@@ -345,7 +371,7 @@ document.getElementById("sendResetCodeBtn").addEventListener("click", () => {
 });
 
 // Confirm reset
-document.getElementById("confirmResetBtn").addEventListener("click", () => {
+document.getElementById("confirmResetBtn").addEventListener("click", async () => {
   const code = document.getElementById("resetCode").value.trim();
   const newPw = document.getElementById("newPassword").value;
   const newPwConfirm = document.getElementById("newPasswordConfirm").value;
@@ -356,16 +382,16 @@ document.getElementById("confirmResetBtn").addEventListener("click", () => {
   if (newPw.length < 4) { alert("Password must be at least 4 characters."); return; }
   if (newPw !== newPwConfirm) { alert("Passwords do not match."); return; }
 
-  // Update password
+  // Update password in database
   const users = getUsers();
   users[resetTargetUserKey].password = simpleHash(newPw);
-  saveUsers(users);
+  await saveOneUser(resetTargetUserKey, users[resetTargetUserKey]);
 
   document.getElementById("forgotPasswordForm").style.display = "none";
   resetVerificationCode = null;
   resetTargetUserKey = null;
 
-  alert(`✅ Password has been reset successfully for "${users[resetTargetUserKey]?.name || resetTargetUserKey}". You can now log in with your new password.`);
+  alert(`✅ Password has been reset successfully. You can now log in with your new password.`);
 });
 
 // Allow Enter key on login inputs
@@ -402,11 +428,13 @@ function refreshHomeUI() {
   }
 }
 
-document.getElementById("adminBtn").addEventListener("click", () => {
+document.getElementById("adminBtn").addEventListener("click", async () => {
   if (!isAdmin()) {
     alert("❌ You do not have admin access.");
     return;
   }
+  // Load latest data from Firebase
+  await loadUsersFromDB();
   renderAdminPanel();
   document.getElementById("adminSection").style.display = "block";
 });
@@ -474,7 +502,7 @@ function renderAdminAccountList() {
           <div>🔑 <strong>Username:</strong> ${k}</div>
           <div>📅 <strong>Created:</strong> ${created}</div>
           <div>🏥 <strong>Health Conditions:</strong> ${conditions}</div>
-          <div>🎯 <strong>Goals:</strong> ${u.goals ? `${u.goals.calories} kcal | P: ${u.goals.protein}g | F: ${u.goals.fat}g | C: ${u.goals.carbs}g` : "Default"}</div>
+          <div>🎯 <strong>Goals:</strong> ${u.goals ? (u.goals.caloriesMin && u.goals.caloriesMax ? `${u.goals.caloriesMin}–${u.goals.caloriesMax} kcal range | P: ${u.goals.protein}g | F: ${u.goals.fat}g | C: ${u.goals.carbs}g` : (u.goals.calories > 0 ? `${u.goals.calories} kcal | P: ${u.goals.protein}g | F: ${u.goals.fat}g | C: ${u.goals.carbs}g` : '⚠️ Not set — needs BMI/BMR calculation')) : "⚠️ Not set"}</div>
         </div>
       </div>
     `;
@@ -521,23 +549,13 @@ async function adminDeleteUser(userKey) {
     }
   }
 
-  // 2. Delete from localStorage
+  // 2. Delete from in-memory cache
   const users = getUsers();
   delete users[userKey];
-  localStorage.setItem(USERS_KEY, JSON.stringify(users)); // Save directly, don't re-sync to cloud
+  usersCache = users;
 
-  // 3. Clean up related local data
-  localStorage.removeItem(`workouts_${userKey}`);
-
-  // Anonymize user's meals in local meal history
-  const mealHistory = JSON.parse(localStorage.getItem("mealHistory")) || [];
-  const updatedMeals = mealHistory.map(m => {
-    if ((m.user || "").toLowerCase() === userKey || (m.username || "").toLowerCase() === userKey) {
-      return { ...m, user: "anonymous", username: "Anonymous" };
-    }
-    return m;
-  });
-  localStorage.setItem("mealHistory", JSON.stringify(updatedMeals));
+  // 3. Anonymize user's meals in cloud meal history
+  // (already done above in Firebase section)
 
   // 4. If deleted user was active, log out
   if (getActiveUser() === userKey) {
@@ -551,9 +569,7 @@ async function adminDeleteUser(userKey) {
 
 // Init
 initEmailService();
-initFirebase().then(() => {
+initFirebase().then(async () => {
+  await loadUsersFromDB();
   refreshHomeUI();
-  if (typeof autoSync === "function") {
-    autoSync().then(() => refreshHomeUI());
-  }
 });
