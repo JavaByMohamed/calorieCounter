@@ -13,7 +13,10 @@
     <!-- Active User Bar -->
     <section class="active-user-bar" id="activeUserBar" style="display:none;">
       <span>👤 Logged in as <strong id="activeUserName"></strong></span>
-      <button id="logoutBtn" class="logout-btn">Log Out</button>
+      <div>
+        <button id="adminBtn" class="secondary-btn" style="margin-right:8px;">🔐 Admin</button>
+        <button id="logoutBtn" class="logout-btn">Log Out</button>
+      </div>
     </section>
 
     <!-- Login / Create Account (shown when not logged in) -->
@@ -162,6 +165,18 @@
     <section class="intro" id="welcomeSection" style="display:none;">
       <h2>Track Your Calories, Achieve Your Goals</h2>
       <p>CalorieCounter is your personal nutrition assistant. Effortlessly log your meals, track your calorie intake, and gain insights into your diet.</p>
+    </section>
+
+    <!-- Admin Panel (hidden by default) -->
+    <section class="intro" id="adminSection" style="display:none;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h2>🔐 Admin Panel</h2>
+        <button id="closeAdminBtn" class="secondary-btn">✕ Close</button>
+      </div>
+      <p style="margin-bottom:15px;">Manage all registered accounts.</p>
+      <div id="adminStats" style="display:flex; gap:15px; margin-bottom:20px; flex-wrap:wrap;"></div>
+      <input type="text" id="adminSearchInput" placeholder="🔍 Search by username or email..." style="width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; margin-bottom:15px;" />
+      <div id="adminAccountList"></div>
     </section>
 
     <section class="quick-nav">

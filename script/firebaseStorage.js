@@ -32,7 +32,7 @@ let firebaseDb = null;
 let firebaseAuth = null;
 let firebaseReady = false;
 
-function initFirebase() {
+async function initFirebase() {
   if (FIREBASE_CONFIG.apiKey === "YOUR_API_KEY") {
     console.warn("⚠️ Firebase not configured. Using localStorage only.");
     return false;
@@ -48,6 +48,15 @@ function initFirebase() {
 
     firebaseDb = firebase.firestore();
     firebaseAuth = firebase.auth();
+
+    // Sign in anonymously so Firestore rules can verify requests come from the app
+    try {
+      await firebaseAuth.signInAnonymously();
+      console.log("✅ Firebase anonymous auth successful");
+    } catch (authError) {
+      console.warn("⚠️ Anonymous auth failed:", authError.message);
+    }
+
     firebaseReady = true;
     console.log("✅ Firebase initialized — cloud storage active");
     return true;

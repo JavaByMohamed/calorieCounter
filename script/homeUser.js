@@ -386,12 +386,162 @@ document.getElementById("loginPassword").addEventListener("keydown", (e) => {
   if (e.key === "Enter") document.getElementById("loginBtn").click();
 });
 
+// === ADMIN PANEL ===
+const ADMIN_PASSWORD = "admin123"; // Change this to your desired admin password
+
+document.getElementById("adminBtn").addEventListener("click", () => {
+  const pw = prompt("Enter admin password:");
+  if (pw === ADMIN_PASSWORD) {
+    renderAdminPanel();
+    document.getElementById("adminSection").style.display = "block";
+  } else if (pw !== null) {
+    alert("❌ Incorrect admin password.");
+  }
+});
+
+document.getElementById("closeAdminBtn").addEventListener("click", () => {
+  document.getElementById("adminSection").style.display = "none";
+});
+
+document.getElementById("adminSearchInput").addEventListener("input", () => {
+  renderAdminAccountList();
+});
+
+function renderAdminPanel() {
+  const users = getUsers();
+  const keys = Object.keys(users);
+
+  // Stats
+  const statsDiv = document.getElementById("adminStats");
+  const verified = keys.filter(k => users[k].emailVerified).length;
+  statsDiv.innerHTML = `
+    <div style="background:#e8f8f0;padding:12px 20px;border-radius:10px;text-align:center;flex:1;min-width:120px;">
+      <div style="font-size:24px;font-weight:bold;color:#27ae60;">${keys.length}</div>
+      <div style="font-size:13px;color:#555;">Total Accounts</div>
+    </div>
+    <div style="background:#e8f0f8;padding:12px 20px;border-radius:10px;text-align:center;flex:1;min-width:120px;">
+      <div style="font-size:24px;font-weight:bold;color:#2980b9;">${verified}</div>
+      <div style="font-size:13px;color:#555;">Verified</div>
+    </div>
+  `;
+
+  renderAdminAccountList();
+}
+
+function renderAdminAccountList() {
+  const users = getUsers();
+  const keys = Object.keys(users);
+  const search = (document.getElementById("adminSearchInput").value || "").toLowerCase();
+  const container = document.getElementById("adminAccountList");
+
+  const filtered = keys.filter(k => {
+    if (!search) return true;
+    return k.includes(search) || (users[k].email || "").includes(search) || (users[k].name || "").includes(search);
+  });
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<p style="color:#999;text-align:center;">No accounts found.</p>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(k => {
+    const u = users[k];
+    const created = u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "Unknown";
+    const conditions = (u.healthConditions && u.healthConditions.length > 0) ? u.healthConditions.join(", ") : "None";
+    return `
+      <div class="admin-account-card" style="background:#fafafa;border:1px solid #eee;border-radius:12px;padding:15px;margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div>
+            <strong style="font-size:16px;">${u.name || k}</strong>
+            ${u.emailVerified ? '<span style="color:#27ae60;font-size:12px;margin-left:6px;">✅ Verified</span>' : '<span style="color:#e67e22;font-size:12px;margin-left:6px;">⚠️ Unverified</span>'}
+          </div>
+          <button onclick="adminDeleteUser('${k}')" style="background:#e74c3c;color:white;border:none;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;">🗑️ Delete</button>
+        </div>
+        <div style="margin-top:8px;font-size:13px;color:#666;line-height:1.8;">
+          <div>📧 <strong>Email:</strong> ${u.email || "N/A"}</div>
+          <div>🔑 <strong>Username:</strong> ${k}</div>
+          <div>📅 <strong>Created:</strong> ${created}</div>
+          <div>🏥 <strong>Health Conditions:</strong> ${conditions}</div>
+          <div>🎯 <strong>Goals:</strong> ${u.goals ? `${u.goals.calories} kcal | P: ${u.goals.protein}g | F: ${u.goals.fat}g | C: ${u.goals.carbs}g` : "Default"}</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+async function adminDeleteUser(userKey) {
+  if (!confirm(`Are you sure you want to PERMANENTLY delete the account "${userKey}"?\n\nThis will remove:\n• User profile\n• All workouts\n\nMeal history will be kept but shown as "Anonymous".\nThe username and email will become available for re-registration.\n\nThis cannot be undone.`)) return;
+
+  // 1. Delete from Firebase FIRST (so sync doesn't bring it back)
+  if (typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    try {
+      // Delete user profile from cloud
+      if (typeof cloudDeleteUser === "function") {
+        await cloudDeleteUser(userKey);
+        console.log(`☁️ User "${userKey}" deleted from Firebase`);
+      }
+      // Delete user's workouts from cloud
+      if (firebaseDb) {
+        try {
+          await firebaseDb.collection("workouts").doc(userKey).delete();
+          console.log(`☁️ Workouts for "${userKey}" deleted from Firebase`);
+        } catch (e) { console.warn("Could not delete cloud workouts:", e); }
+      }
+      // Anonymize user's meals in cloud meal history
+      if (firebaseDb && typeof cloudLoadAllMealHistory === "function" && typeof cloudSaveAllMealHistory === "function") {
+        try {
+          const cloudMeals = await cloudLoadAllMealHistory();
+          if (cloudMeals && cloudMeals.length > 0) {
+            const updated = cloudMeals.map(m => {
+              if ((m.user || "").toLowerCase() === userKey || (m.username || "").toLowerCase() === userKey) {
+                return { ...m, user: "anonymous", username: "Anonymous" };
+              }
+              return m;
+            });
+            await cloudSaveAllMealHistory(updated);
+            console.log(`☁️ Meal history for "${userKey}" anonymized in Firebase`);
+          }
+        } catch (e) { console.warn("Could not anonymize cloud meals:", e); }
+      }
+    } catch (error) {
+      console.error("❌ Cloud deletion failed:", error);
+      if (!confirm("⚠️ Failed to delete from cloud. Delete locally anyway?")) return;
+    }
+  }
+
+  // 2. Delete from localStorage
+  const users = getUsers();
+  delete users[userKey];
+  localStorage.setItem(USERS_KEY, JSON.stringify(users)); // Save directly, don't re-sync to cloud
+
+  // 3. Clean up related local data
+  localStorage.removeItem(`workouts_${userKey}`);
+
+  // Anonymize user's meals in local meal history
+  const mealHistory = JSON.parse(localStorage.getItem("mealHistory")) || [];
+  const updatedMeals = mealHistory.map(m => {
+    if ((m.user || "").toLowerCase() === userKey || (m.username || "").toLowerCase() === userKey) {
+      return { ...m, user: "anonymous", username: "Anonymous" };
+    }
+    return m;
+  });
+  localStorage.setItem("mealHistory", JSON.stringify(updatedMeals));
+
+  // 4. If deleted user was active, log out
+  if (getActiveUser() === userKey) {
+    clearActiveUser();
+    refreshHomeUI();
+  }
+
+  renderAdminPanel();
+  alert(`✅ Account "${userKey}" has been permanently deleted.\n\nThe username and email are now available for re-registration.`);
+}
+
 // Init
 initEmailService();
-initFirebase();
-refreshHomeUI();
-
-// Auto-sync with cloud after page loads
-if (typeof autoSync === "function") {
-  autoSync().then(() => refreshHomeUI());
-}
+initFirebase().then(() => {
+  refreshHomeUI();
+  if (typeof autoSync === "function") {
+    autoSync().then(() => refreshHomeUI());
+  }
+});
