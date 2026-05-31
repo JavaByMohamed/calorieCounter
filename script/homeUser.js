@@ -11,8 +11,13 @@ function saveUsers(users) {
   // Sync each user to cloud
   if (typeof cloudSaveUser === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
     for (const key in users) {
-      cloudSaveUser(key, users[key]);
+      cloudSaveUser(key, users[key]).then(ok => {
+        if (ok) console.log(`☁️ User "${key}" synced to Firebase`);
+        else console.warn(`⚠️ User "${key}" failed to sync to Firebase`);
+      });
     }
+  } else {
+    console.warn("⚠️ Firebase not ready — user saved to localStorage only. firebaseReady:", typeof isFirebaseReady === "function" ? isFirebaseReady() : "N/A");
   }
 }
 
