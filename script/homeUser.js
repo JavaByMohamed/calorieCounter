@@ -64,22 +64,7 @@ const welcomeSection = document.getElementById("welcomeSection");
 const activeUserBar = document.getElementById("activeUserBar");
 const activeUserName = document.getElementById("activeUserName");
 
-function refreshHomeUI() {
-  const active = getActiveUser();
-  const users = getUsers();
-
-  if (active && users[active]) {
-    loginSection.style.display = "none";
-    welcomeSection.style.display = "block";
-    activeUserBar.style.display = "flex";
-    activeUserName.textContent = users[active].name;
-  } else {
-    clearActiveUser();
-    loginSection.style.display = "block";
-    welcomeSection.style.display = "none";
-    activeUserBar.style.display = "none";
-  }
-}
+// (refreshHomeUI is defined in the admin panel section above)
 
 // Login — supports username or email
 document.getElementById("loginBtn").addEventListener("click", () => {
@@ -387,16 +372,38 @@ document.getElementById("loginPassword").addEventListener("keydown", (e) => {
 });
 
 // === ADMIN PANEL ===
-const ADMIN_PASSWORD = "admin123"; // Change this to your desired admin password
+const ADMIN_USERS = ["mohamed"]; // Add admin usernames here (lowercase)
+
+function isAdmin() {
+  return ADMIN_USERS.includes(getActiveUser().toLowerCase());
+}
+
+function refreshHomeUI() {
+  const active = getActiveUser();
+  const users = getUsers();
+
+  if (active && users[active]) {
+    loginSection.style.display = "none";
+    welcomeSection.style.display = "block";
+    activeUserBar.style.display = "flex";
+    activeUserName.textContent = users[active].name;
+    document.getElementById("adminBtn").style.display = isAdmin() ? "inline-block" : "none";
+  } else {
+    clearActiveUser();
+    loginSection.style.display = "block";
+    welcomeSection.style.display = "none";
+    activeUserBar.style.display = "none";
+    document.getElementById("adminSection").style.display = "none";
+  }
+}
 
 document.getElementById("adminBtn").addEventListener("click", () => {
-  const pw = prompt("Enter admin password:");
-  if (pw === ADMIN_PASSWORD) {
-    renderAdminPanel();
-    document.getElementById("adminSection").style.display = "block";
-  } else if (pw !== null) {
-    alert("❌ Incorrect admin password.");
+  if (!isAdmin()) {
+    alert("❌ You do not have admin access.");
+    return;
   }
+  renderAdminPanel();
+  document.getElementById("adminSection").style.display = "block";
 });
 
 document.getElementById("closeAdminBtn").addEventListener("click", () => {
