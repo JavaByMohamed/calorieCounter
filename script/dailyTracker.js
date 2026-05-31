@@ -30,6 +30,8 @@ function updateUserGoals(username, goals) {
   if (!users[key]) return;
   users[key].goals = {
     calories: parseFloat(goals.calories) || 2000,
+    caloriesMin: users[key].goals?.caloriesMin || 0,
+    caloriesMax: users[key].goals?.caloriesMax || 0,
     protein: parseFloat(goals.protein) || 150,
     fat: parseFloat(goals.fat) || 65,
     carbs: parseFloat(goals.carbs) || 250,
@@ -143,10 +145,15 @@ function drawDonutChart(canvas, consumed, goals) {
   ctx.fillStyle = "#333";
   ctx.font = "bold 18px Segoe UI, sans-serif";
   ctx.textAlign = "center";
-  ctx.fillText(`${consumed.calories.toFixed(0)}`, cx, cy - 5);
-  ctx.font = "12px Segoe UI, sans-serif";
+  ctx.fillText(`${consumed.calories.toFixed(0)}`, cx, cy - 10);
+  ctx.font = "11px Segoe UI, sans-serif";
   ctx.fillStyle = "#888";
-  ctx.fillText(`/ ${goals.calories.toFixed(0)} kcal`, cx, cy + 14);
+  if (goals.caloriesMin && goals.caloriesMax) {
+    ctx.fillText(`${goals.caloriesMin}–${goals.caloriesMax}`, cx, cy + 8);
+    ctx.fillText(`kcal range`, cx, cy + 22);
+  } else {
+    ctx.fillText(`/ ${goals.calories.toFixed(0)} kcal`, cx, cy + 14);
+  }
 
   return macros;
 }
@@ -160,8 +167,11 @@ function renderDonutLegend(macros) {
 
 // ==================== PROGRESS BARS ====================
 function renderMacroProgress(goals, consumed) {
+  const caloriesMin = goals.caloriesMin || 0;
+  const caloriesMax = goals.caloriesMax || goals.calories || 0;
+  const calEaten = consumed.calories || 0;
+
   const macros = [
-    { label: "Calories", key: "calories", unit: "kcal", color: "#e74c3c" },
     { label: "Protein", key: "protein", unit: "g", color: "#3498db" },
     { label: "Fat", key: "fat", unit: "g", color: "#f39c12" },
     { label: "Carbs", key: "carbs", unit: "g", color: "#9b59b6" },
@@ -169,12 +179,72 @@ function renderMacroProgress(goals, consumed) {
   ];
 
   let html = '<div class="macro-progress-container">';
+
+  // Calorie range bar (BMR – TDEE)
+  if (caloriesMin > 0 && caloriesMax > 0) {
+    const pct = caloriesMax > 0 ? Math.min(100, (calEaten / caloriesMax) * 100) : 0;
+    const minPct = caloriesMax > 0 ? (caloriesMin / caloriesMax) * 100 : 0;
+    const belowMin = calEaten < caloriesMin;
+    const overMax = calEaten > caloriesMax;
+    const inRange = !belowMin && !overMax;
+    const barColor = overMax ? '#e74c3c' : (belowMin ? '#f39c12' : '#27ae60');
+
+    let statusText;
+    if (overMax) {
+      statusText = `⚠️ Over TDEE by ${(calEaten - caloriesMax).toFixed(0)} kcal`;
+    } else if (belowMin) {
+      statusText = `⚠️ Below BMR — eat at least ${(caloriesMin - calEaten).toFixed(0)} more kcal`;
+    } else {
+      statusText = `✅ In range — ${(caloriesMax - calEaten).toFixed(0)} kcal left until TDEE`;
+    }
+
+    html += `
+      <div class="macro-row">
+        <div class="macro-label">
+          <strong>Calories</strong>
+          <span class="macro-numbers">${calEaten.toFixed(0)} kcal</span>
+        </div>
+        <div class="macro-bar-bg" style="position:relative;">
+          <div class="macro-bar-fill" style="width:${pct}%; background:${barColor};"></div>
+          <div class="calorie-range-marker" style="position:absolute; left:${minPct}%; top:0; bottom:0; width:2px; background:#333; opacity:0.5;" title="BMR (${caloriesMin} kcal)"></div>
+        </div>
+        <div class="macro-range-labels" style="display:flex; justify-content:space-between; font-size:11px; color:#888; margin-top:2px;">
+          <span>BMR: ${caloriesMin} kcal</span>
+          <span>TDEE: ${caloriesMax} kcal</span>
+        </div>
+        <div class="macro-remaining ${overMax ? 'over-text' : ''}" style="margin-top:2px;">
+          ${statusText}
+        </div>
+      </div>
+    `;
+  } else {
+    // No BMR/TDEE set — show basic calorie bar
+    const goal = goals.calories || 0;
+    const pct = goal > 0 ? Math.min(100, (calEaten / goal) * 100) : 0;
+    const over = calEaten > goal && goal > 0;
+    html += `
+      <div class="macro-row">
+        <div class="macro-label">
+          <strong>Calories</strong>
+          <span class="macro-numbers">${calEaten.toFixed(1)} / ${goal.toFixed(0)} kcal</span>
+        </div>
+        <div class="macro-bar-bg">
+          <div class="macro-bar-fill ${over ? 'over' : ''}" style="width:${pct}%; background:${over ? '#e74c3c' : '#e74c3c'};"></div>
+        </div>
+        <div class="macro-remaining">
+          ${goal === 0 ? '⚠️ <a href="bmi-bmr.html">Calculate BMI & BMR</a> to set your calorie range' : (over ? `⚠️ Over by ${(calEaten - goal).toFixed(1)} kcal` : `✅ ${(goal - calEaten).toFixed(1)} kcal left`)}
+        </div>
+      </div>
+    `;
+  }
+
+  // Other macros
   macros.forEach((m) => {
     const goal = goals[m.key] || 0;
     const eaten = consumed[m.key] || 0;
     const remaining = Math.max(0, goal - eaten);
     const pct = goal > 0 ? Math.min(100, (eaten / goal) * 100) : 0;
-    const over = eaten > goal;
+    const over = eaten > goal && goal > 0;
 
     html += `
       <div class="macro-row">
@@ -186,7 +256,7 @@ function renderMacroProgress(goals, consumed) {
           <div class="macro-bar-fill ${over ? 'over' : ''}" style="width:${pct}%; background:${over ? '#e74c3c' : m.color};"></div>
         </div>
         <div class="macro-remaining ${over ? 'over-text' : ''}">
-          ${over ? `⚠️ Over by ${(eaten - goal).toFixed(1)} ${m.unit}` : `✅ ${remaining.toFixed(1)} ${m.unit} left`}
+          ${goal === 0 ? '—' : (over ? `⚠️ Over by ${(eaten - goal).toFixed(1)} ${m.unit}` : `✅ ${remaining.toFixed(1)} ${m.unit} left`)}
         </div>
       </div>
     `;
@@ -273,13 +343,19 @@ function renderUserStats(user) {
   if (user.bmr) {
     html += `<div class="stat-card">
       <span class="stat-icon">🔥</span>
-      <div><strong>BMR:</strong> ${user.bmr} kcal/day</div>
+      <div><strong>BMR:</strong> ${user.bmr} kcal/day <span class="stat-sub">(minimum)</span></div>
     </div>`;
   }
   if (user.tdee) {
     html += `<div class="stat-card">
       <span class="stat-icon">⚡</span>
-      <div><strong>TDEE:</strong> ${user.tdee} kcal/day</div>
+      <div><strong>TDEE:</strong> ${user.tdee} kcal/day <span class="stat-sub">(maximum)</span></div>
+    </div>`;
+  }
+  if (user.bmr && user.tdee) {
+    html += `<div class="stat-card" style="background:linear-gradient(135deg,#e8f8f0,#e8f0f8);border:2px solid #27ae60;">
+      <span class="stat-icon">🎯</span>
+      <div><strong>Allowed Range:</strong> ${user.bmr} – ${user.tdee} kcal/day</div>
     </div>`;
   }
   if (user.dietPlan) {

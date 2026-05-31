@@ -31,24 +31,10 @@ function populateIngredientDropdown() {
   });
 }
 
-// Show active user on the meal page
-function populateUsernameDropdown() {
-  const userSelect = document.getElementById("mealUsername");
-  if (!userSelect) return;
-  const activeUser = localStorage.getItem("activeUser") || "";
-  const users = JSON.parse(localStorage.getItem("userProfiles")) || {};
-  if (activeUser && users[activeUser]) {
-    userSelect.innerHTML = `<option value="${activeUser}" selected>${users[activeUser].name}</option>`;
-  } else {
-    userSelect.innerHTML = '<option value="">-- Not logged in --</option>';
-  }
-}
-
 // Call the function to populate the dropdown on page load
 document.addEventListener("DOMContentLoaded", async () => {
   await syncFromCloud();
   populateIngredientDropdown();
-  populateUsernameDropdown();
   loadMealFromStorage();
 });
 
@@ -285,13 +271,6 @@ document.getElementById("saveMealBtn").addEventListener("click", function () {
     return;
   }
 
-  const mealUsernameSelect = document.getElementById("mealUsername");
-  const selectedUser = mealUsernameSelect ? mealUsernameSelect.value : "";
-  if (!selectedUser) {
-    alert("Please log in first from the Home page to save meals.");
-    return;
-  }
-
   const mealNameInput = document.getElementById("mealName");
   const mealName = mealNameInput.value.trim() || `Meal ${new Date().toLocaleString()}`;
 
@@ -319,7 +298,7 @@ document.getElementById("saveMealBtn").addEventListener("click", function () {
 
   const savedMeal = {
     id: Date.now(),
-    username: selectedUser,
+    username: "anonymous",
     name: mealName,
     servings: servings,
     date: new Date().toISOString(),
@@ -342,3 +321,73 @@ document.getElementById("saveMealBtn").addEventListener("click", function () {
     displayMeal();
   }
 });
+
+// 📅 Add to Today's Tracker — requires login
+document.getElementById("addToTrackerBtn").addEventListener("click", function () {
+  if (mealItems.length === 0) {
+    alert("No items in the current meal. Add ingredients first.");
+    return;
+  }
+
+  const selectedUser = localStorage.getItem("activeUser") || "";
+
+  if (!selectedUser) {
+    alert("⚠️ You must be logged in to add meals to your daily tracker.\n\nPlease log in from the Home page first.");
+    return;
+  }
+
+  const mealNameInput = document.getElementById("mealName");
+  const mealName = mealNameInput.value.trim() || `Meal ${new Date().toLocaleString()}`;
+
+  const servingsInput = document.getElementById("mealServings");
+  const totalServings = Math.max(1, parseInt(servingsInput.value) || 1);
+
+  const trackerServingsInput = document.getElementById("trackerServings");
+  const servingsEaten = Math.max(1, parseInt(trackerServingsInput.value) || 1);
+
+  // Calculate totals for the full recipe
+  const totals = mealItems.reduce((acc, item) => {
+    acc.calories += item.calories;
+    acc.protein += item.protein;
+    acc.fat += item.fat;
+    acc.carbs += item.carbs;
+    acc.fiber += (item.fiber || 0);
+    return acc;
+  }, { calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0 });
+
+  // Per serving
+  const perServing = {
+    calories: +(totals.calories / totalServings).toFixed(1),
+    protein: +(totals.protein / totalServings).toFixed(1),
+    fat: +(totals.fat / totalServings).toFixed(1),
+    carbs: +(totals.carbs / totalServings).toFixed(1),
+    fiber: +(totals.fiber / totalServings).toFixed(1),
+  };
+
+  // What gets logged to tracker = perServing * servingsEaten
+  const trackerEntry = {
+    id: Date.now(),
+    username: selectedUser,
+    name: mealName + (servingsEaten > 1 ? ` (x${servingsEaten})` : ""),
+    servings: totalServings,
+    servingsEaten: servingsEaten,
+    date: new Date().toISOString(),
+    items: [...mealItems],
+    totals: {
+      calories: +(perServing.calories * servingsEaten).toFixed(1),
+      protein: +(perServing.protein * servingsEaten).toFixed(1),
+      fat: +(perServing.fat * servingsEaten).toFixed(1),
+      carbs: +(perServing.carbs * servingsEaten).toFixed(1),
+      fiber: +(perServing.fiber * servingsEaten).toFixed(1),
+    },
+    perServing: perServing,
+    addedToTracker: true,
+  };
+
+  const history = getMealHistory();
+  history.unshift(trackerEntry);
+  saveMealHistory(history);
+
+  alert(`✅ "${mealName}" (${servingsEaten} serving${servingsEaten > 1 ? 's' : ''}) added to today's tracker!\n\nView your daily progress on the Daily Tracker page.`);
+});
+

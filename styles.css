@@ -471,9 +471,64 @@ footer {
 /* Top Navigation */
 .topnav {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
   align-items: center;
   background-color: #2ecc71;
+  width: 100%;
+  padding: 0 20px;
+}
+
+/* Desktop navigation links */
+.nav-links {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.nav-links a {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.nav-links a:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Profile icon */
+.profile-icon {
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.profile-icon:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Hide hamburger on desktop, hide nav-links on mobile */
+@media (min-width: 769px) {
+  .container {
+    display: none !important;
+  }
+  .navbar {
+    display: none !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    display: none;
+  }
 }
 
 /* Logo and Hamburger Menu Container */

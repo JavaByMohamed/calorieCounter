@@ -238,7 +238,13 @@ document.getElementById("confirmVerifyBtn").addEventListener("click", () => {
     email: pendingRegistration.email,
     password: pendingRegistration.password,
     healthConditions: pendingRegistration.healthConditions,
-    goals: pendingRegistration.goals,
+    goals: {
+      calories: 0,
+      protein: 0,
+      fat: 0,
+      carbs: 0,
+      fiber: 0,
+    },
     emailVerified: true,
     createdAt: pendingRegistration.createdAt,
   };
@@ -248,14 +254,13 @@ document.getElementById("confirmVerifyBtn").addEventListener("click", () => {
   document.getElementById("emailVerificationForm").style.display = "none";
   refreshHomeUI();
 
-  let msg = `Welcome, ${pendingRegistration.name}! Your email has been verified and account created. 🎉\n\nYou can set your daily macro goals on the Daily Tracker page.`;
-  if (pendingRegistration.tips.length > 0) {
-    msg += `\n\n📋 Your goals have been adjusted for your health conditions:\n\n` + pendingRegistration.tips.join("\n\n");
-  }
-  alert(msg);
+  alert(`Welcome, ${pendingRegistration.name}! Your email has been verified and account created. 🎉\n\nLet's set up your calorie goals by calculating your BMI and BMR.`);
 
   pendingRegistration = null;
   pendingVerificationCode = null;
+
+  // Navigate to BMI/BMR calculator to set goals
+  window.location.href = "bmi-bmr.html";
 });
 
 // Resend verification code

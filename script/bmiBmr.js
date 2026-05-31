@@ -90,6 +90,25 @@ bmiBmrForm.addEventListener("submit", function (e) {
     bodyStats: { age, height, weight, gender, activityLabel },
   };
 
+  // Auto-update profile if logged in
+  const activeUser = localStorage.getItem("activeUser") || "";
+  if (activeUser) {
+    const users = JSON.parse(localStorage.getItem("userProfiles")) || {};
+    if (users[activeUser]) {
+      users[activeUser].bmi = bmi;
+      users[activeUser].bmiCategory = bmiCat;
+      users[activeUser].bmr = bmr.toFixed(1);
+      users[activeUser].tdee = tdee.toFixed(1);
+      users[activeUser].bodyStats = { age, height, weight, gender, activityLabel };
+      // Update calorie range: BMR (min) to TDEE (max)
+      if (!users[activeUser].goals) users[activeUser].goals = {};
+      users[activeUser].goals.calories = Math.round(tdee);
+      users[activeUser].goals.caloriesMin = Math.round(bmr);
+      users[activeUser].goals.caloriesMax = Math.round(tdee);
+      localStorage.setItem("userProfiles", JSON.stringify(users));
+    }
+  }
+
   // Show save section if user is selected
   const saveDietSection = document.getElementById("saveDietSection");
   if (saveDietSection) {
@@ -120,9 +139,9 @@ bmiBmrForm.addEventListener("submit", function (e) {
 
 // 💾 Save BMI/BMR/Diet to user profile
 document.getElementById("saveDietBtn").addEventListener("click", function () {
-  const username = document.getElementById("bmiUsername").value;
+  const username = document.getElementById("bmiUsername").value || localStorage.getItem("activeUser") || "";
   if (!username) {
-    alert("Please select a user from the dropdown at the top of the form.");
+    alert("Please log in from the Home page to save your diet plan to your profile.");
     return;
   }
 
@@ -151,8 +170,11 @@ document.getElementById("saveDietBtn").addEventListener("click", function () {
     "Low Carbs (Keto)": { carbs: 5, protein: 20, fat: 75 },
   };
   const plan = dietMacros[dietPlan] || dietMacros["Balanced Diet (Maintenance)"];
+  const bmrVal = parseFloat(latestBmiResults.bmr);
   users[username].goals = {
     calories: Math.round(tdee),
+    caloriesMin: Math.round(bmrVal),
+    caloriesMax: Math.round(tdee),
     protein: Math.round((tdee * plan.protein / 100) / 4),
     fat: Math.round((tdee * plan.fat / 100) / 9),
     carbs: Math.round((tdee * plan.carbs / 100) / 4),
@@ -162,7 +184,7 @@ document.getElementById("saveDietBtn").addEventListener("click", function () {
   localStorage.setItem("userProfiles", JSON.stringify(users));
   localStorage.setItem("lastSelectedUser", username);
 
-  alert(`Saved to ${users[username].name}'s profile!\n\nBMI: ${latestBmiResults.bmi} (${latestBmiResults.bmiCategory})\nBMR: ${latestBmiResults.bmr} kcal\nTDEE: ${latestBmiResults.tdee} kcal\nDiet: ${dietPlan}\n\nDaily macro goals have been auto-calculated.`);
+  alert(`Saved to ${users[username].name}'s profile!\n\nBMI: ${latestBmiResults.bmi} (${latestBmiResults.bmiCategory})\nBMR: ${latestBmiResults.bmr} kcal (minimum)\nTDEE: ${latestBmiResults.tdee} kcal (maximum)\nDiet: ${dietPlan}\n\nYour allowed calorie range is ${Math.round(bmrVal)}–${Math.round(tdee)} kcal/day.\nDaily macro goals have been auto-calculated.`);
 });
 
 // 🍽️ Diet Options Calculation
