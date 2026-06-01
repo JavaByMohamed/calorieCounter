@@ -92,7 +92,11 @@ function populateWorkoutUserDropdown() {
     select.innerHTML = '<option value="">-- Not logged in --</option>';
   }
 }
-populateWorkoutUserDropdown();
+if (typeof waitForFirebase === "function") {
+  waitForFirebase().then(() => populateWorkoutUserDropdown());
+} else {
+  populateWorkoutUserDropdown();
+}
 
 document.getElementById("loadUserBtn").addEventListener("click", loadUser);
 document.getElementById("exerciseForm").addEventListener("submit", saveExercise);
@@ -107,6 +111,9 @@ async function loadUser() {
   }
   currentUser = username;
   // Load workouts from Firebase
+  if (typeof waitForFirebase === "function") {
+    await waitForFirebase();
+  }
   if (typeof cloudLoadWorkouts === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
     workoutsCache = await cloudLoadWorkouts(currentUser) || [];
   }

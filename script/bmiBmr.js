@@ -34,7 +34,11 @@ function populateBmiUserDropdown() {
     select.innerHTML = '<option value="">-- Not logged in --</option>';
   }
 }
-populateBmiUserDropdown();
+if (typeof waitForFirebase === "function") {
+  waitForFirebase().then(() => populateBmiUserDropdown());
+} else {
+  populateBmiUserDropdown();
+}
 
 // Store latest calculation results for saving
 let latestBmiResults = {};

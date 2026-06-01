@@ -117,9 +117,23 @@
       cloudDataOutput.textContent = "Loading...";
 
       try {
+        // Try Firebase first
+        if (typeof waitForFirebase === "function") {
+          await waitForFirebase();
+        }
+        if (typeof cloudLoadIngredients === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+          const data = await cloudLoadIngredients();
+          if (data && Object.keys(data).length > 0) {
+            cloudDataOutput.textContent = JSON.stringify(data, null, 2);
+          } else {
+            cloudDataOutput.textContent = "No data found in cloud yet. Add an ingredient to create your first sync.";
+          }
+          return;
+        }
+        // Fallback to JSONBin
         const { loadFromCloud, isCloudEnabled } = await import('./script/cloudStorage.js');
         if (!isCloudEnabled()) {
-          cloudDataOutput.textContent = "⚠️ Cloud storage is not configured.\n\nAdd your JSONBin.io API key in script/cloudStorage.js";
+          cloudDataOutput.textContent = "⚠️ Cloud storage is not configured.";
           return;
         }
         const data = await loadFromCloud();

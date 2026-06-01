@@ -178,8 +178,9 @@ document.getElementById("clearFilterBtn").addEventListener("click", function () 
 
 // Init — wait for Firebase to be ready
 async function initMealHistory() {
-  // Small delay to allow Firebase to initialize
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  if (typeof waitForFirebase === "function") {
+    await waitForFirebase();
+  }
   await populateUserFilter();
   await displayHistory(null, null);
 }

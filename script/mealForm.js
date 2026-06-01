@@ -246,6 +246,9 @@ function renderIngredientList(filter) {
 
 // Call the function to populate the dropdown on page load
 document.addEventListener("DOMContentLoaded", async () => {
+  if (typeof waitForFirebase === "function") {
+    await waitForFirebase();
+  }
   await syncFromCloud();
   populateIngredientDropdown();
   initAPISearch();
