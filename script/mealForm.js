@@ -1,10 +1,169 @@
 import { mockNutritionDB, syncFromCloud } from './mockDatabase.js';
 import { isCloudEnabled, saveToCloud, loadFromCloud } from './cloudStorage.js';
+import { searchSwedishFood, getFoodNutrition, searchSwedishStoreProducts } from './swedishFoodAPI.js';
 
 // Example usage
 console.log(mockNutritionDB);
 
-// Populate the ingredient dropdown
+// 🇸🇪 Swedish Food API Search Integration
+let apiSelectedFood = null;
+let currentSearchSource = "stores"; // "stores" (Open Food Facts) or "livsmedelsverket"
+
+function initAPISearch() {
+  const searchInput = document.getElementById("apiSearch");
+  const resultsDiv = document.getElementById("apiSearchResults");
+  const previewDiv = document.getElementById("apiNutritionPreview");
+  if (!searchInput) return;
+
+  // Source toggle buttons
+  const sourceToggles = document.querySelectorAll(".api-source-btn");
+  sourceToggles.forEach(btn => {
+    btn.addEventListener("click", () => {
+      sourceToggles.forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentSearchSource = btn.getAttribute("data-source");
+      // Re-trigger search if there's text
+      if (searchInput.value.trim().length >= 2) {
+        searchInput.dispatchEvent(new Event("input"));
+      }
+    });
+  });
+
+  let debounceTimer = null;
+
+  searchInput.addEventListener("input", function () {
+    clearTimeout(debounceTimer);
+    const query = this.value.trim();
+    if (query.length < 2) {
+      resultsDiv.style.display = "none";
+      return;
+    }
+    debounceTimer = setTimeout(async () => {
+      resultsDiv.innerHTML = '<div class="ingredient-option disabled">Searching...</div>';
+      resultsDiv.style.display = "block";
+      console.log("[API Search] Source:", currentSearchSource, "Query:", query);
+
+      if (currentSearchSource === "stores") {
+        // Open Food Facts — Swedish grocery store products
+        let results = [];
+        try {
+          results = await searchSwedishStoreProducts(query);
+        } catch (e) {
+          console.error("Store search failed:", e);
+        }
+        if (results.length === 0) {
+          resultsDiv.innerHTML = '<div class="ingredient-option disabled">No store products found.</div>';
+        } else {
+          // Store results in a temporary array to avoid JSON-in-attribute issues
+          window._storeSearchResults = results;
+          resultsDiv.innerHTML = results.map((item, idx) =>
+            `<div class="ingredient-option" data-index="${idx}">
+              <strong>${item.name}</strong>${item.brand ? ` <small>(${item.brand})</small>` : ""}
+              ${item.stores ? `<br><small>🏪 ${item.stores}</small>` : ""}
+            </div>`
+          ).join("");
+          resultsDiv.querySelectorAll(".ingredient-option:not(.disabled)").forEach(opt => {
+            opt.addEventListener("click", () => {
+              const item = window._storeSearchResults[parseInt(opt.getAttribute("data-index"))];
+              searchInput.value = item.name;
+              resultsDiv.style.display = "none";
+              showNutritionPreview(previewDiv, {
+                name: `${item.name}${item.brand ? " (" + item.brand + ")" : ""}`,
+                calories: item.calories,
+                protein: item.protein,
+                fat: item.fat,
+                carbs: item.carbs,
+                fiber: item.fiber,
+                source: item.source,
+                stores: item.stores,
+              });
+            });
+          });
+        }
+      } else {
+        // Livsmedelsverket — generic Swedish foods
+        const results = await searchSwedishFood(query);
+        if (results.length === 0) {
+          resultsDiv.innerHTML = '<div class="ingredient-option disabled">No results found. Try searching in Swedish.</div>';
+        } else {
+          resultsDiv.innerHTML = results.map(item =>
+            `<div class="ingredient-option" data-id="${item.id}">${item.name}</div>`
+          ).join("");
+          resultsDiv.querySelectorAll(".ingredient-option:not(.disabled)").forEach(opt => {
+            opt.addEventListener("click", async () => {
+              searchInput.value = opt.textContent;
+              resultsDiv.style.display = "none";
+              previewDiv.style.display = "block";
+              previewDiv.innerHTML = "<p>Loading nutritional data...</p>";
+
+              const nutrition = await getFoodNutrition(opt.getAttribute("data-id"));
+              if (nutrition) {
+                showNutritionPreview(previewDiv, nutrition);
+              } else {
+                previewDiv.innerHTML = "<p>❌ Could not load nutrition data for this item.</p>";
+              }
+            });
+          });
+        }
+      }
+    }, 400);
+  });
+
+  // Close results on outside click
+  document.addEventListener("click", (e) => {
+    if (!searchInput.parentElement.contains(e.target)) {
+      resultsDiv.style.display = "none";
+    }
+  });
+}
+
+function showNutritionPreview(previewDiv, nutrition) {
+  apiSelectedFood = nutrition;
+  previewDiv.style.display = "block";
+  previewDiv.innerHTML = `
+    <h5>📊 ${nutrition.name} (per 100g)</h5>
+    <p>
+      <strong>Calories:</strong> ${nutrition.calories} kcal |
+      <strong>Protein:</strong> ${nutrition.protein}g |
+      <strong>Fat:</strong> ${nutrition.fat}g |
+      <strong>Carbs:</strong> ${nutrition.carbs}g |
+      <strong>Fiber:</strong> ${nutrition.fiber || 0}g
+    </p>
+    ${nutrition.stores ? `<p><small>🏪 Sold at: ${nutrition.stores}</small></p>` : ""}
+    <p><small>Source: ${nutrition.source}</small></p>
+    <button type="button" id="useApiDataBtn">✅ Use this ingredient</button>
+  `;
+  document.getElementById("useApiDataBtn").addEventListener("click", () => {
+    useApiFood(nutrition);
+  });
+}
+
+// Use API food data — adds it as a temporary entry to the local DB and fills the form
+function useApiFood(nutrition) {
+  const name = nutrition.name.toLowerCase();
+  // Add to local mock DB so the meal form can use it
+  mockNutritionDB[name] = {
+    calories: nutrition.calories,
+    protein: nutrition.protein,
+    fat: nutrition.fat,
+    carbs: nutrition.carbs,
+    fiber: nutrition.fiber,
+  };
+  // Fill in the ingredient input and focus on amount
+  const ingredientInput = document.getElementById("ingredient");
+  if (ingredientInput) {
+    ingredientInput.value = name;
+  }
+  const amountInput = document.getElementById("amount");
+  if (amountInput) {
+    amountInput.focus();
+    amountInput.value = 100;
+  }
+  // Refresh dropdown
+  renderIngredientList("");
+}
+
+// Populate the ingredient dropdown with search/filter capability
 function populateIngredientDropdown() {
   const ingredientDropdown = document.getElementById("ingredient");
   if (!ingredientDropdown) {
@@ -12,22 +171,76 @@ function populateIngredientDropdown() {
     return;
   }
 
-  ingredientDropdown.innerHTML = ""; // Clear existing options
+  // Convert select to a searchable input if not already done
+  if (ingredientDropdown.tagName === "SELECT") {
+    const wrapper = document.createElement("div");
+    wrapper.className = "ingredient-search-wrapper";
+    wrapper.style.position = "relative";
 
-  // Add a default placeholder option
-  const defaultOption = document.createElement("option");
-  defaultOption.value = "";
-  defaultOption.textContent = "Select an ingredient";
-  defaultOption.disabled = true;
-  defaultOption.selected = true;
-  ingredientDropdown.appendChild(defaultOption);
+    const searchInput = document.createElement("input");
+    searchInput.type = "text";
+    searchInput.id = "ingredient";
+    searchInput.placeholder = "Search ingredients...";
+    searchInput.autocomplete = "off";
+    searchInput.required = true;
 
-  // Populate the dropdown with sorted ingredients
-  Object.keys(mockNutritionDB).sort().forEach((ingredient) => {
-    const option = document.createElement("option");
-    option.value = ingredient;
-    option.textContent = ingredient.charAt(0).toUpperCase() + ingredient.slice(1);
-    ingredientDropdown.appendChild(option);
+    const dropdown = document.createElement("div");
+    dropdown.id = "ingredientDropdownList";
+    dropdown.className = "ingredient-dropdown-list";
+
+    ingredientDropdown.parentNode.replaceChild(wrapper, ingredientDropdown);
+    wrapper.appendChild(searchInput);
+    wrapper.appendChild(dropdown);
+
+    // Build the filtered list
+    searchInput.addEventListener("input", function () {
+      renderIngredientList(this.value);
+    });
+
+    searchInput.addEventListener("focus", function () {
+      renderIngredientList(this.value);
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", function (e) {
+      if (!wrapper.contains(e.target)) {
+        dropdown.style.display = "none";
+      }
+    });
+  }
+
+  renderIngredientList("");
+}
+
+function renderIngredientList(filter) {
+  const dropdown = document.getElementById("ingredientDropdownList");
+  if (!dropdown) return;
+
+  const query = filter.toLowerCase().trim();
+  const sorted = Object.keys(mockNutritionDB).sort();
+  const filtered = query
+    ? sorted.filter(name => name.includes(query))
+    : sorted;
+
+  if (filtered.length === 0) {
+    dropdown.innerHTML = '<div class="ingredient-option disabled">No ingredients found</div>';
+    dropdown.style.display = "block";
+    return;
+  }
+
+  dropdown.innerHTML = filtered.map(name =>
+    `<div class="ingredient-option" data-value="${name}">${name.charAt(0).toUpperCase() + name.slice(1)}</div>`
+  ).join("");
+
+  dropdown.style.display = "block";
+
+  // Click handlers for options
+  dropdown.querySelectorAll(".ingredient-option:not(.disabled)").forEach(opt => {
+    opt.addEventListener("click", function () {
+      const input = document.getElementById("ingredient");
+      input.value = this.getAttribute("data-value");
+      dropdown.style.display = "none";
+    });
   });
 }
 
@@ -35,19 +248,19 @@ function populateIngredientDropdown() {
 document.addEventListener("DOMContentLoaded", async () => {
   await syncFromCloud();
   populateIngredientDropdown();
+  initAPISearch();
 });
 
 // 🥗 Meal Form Handling
 const form = document.getElementById("mealForm");
 const output = document.getElementById("mealOutput");
-const ingredientDropdown = document.getElementById("ingredient");
 let mealItems = []; // In-memory only — no localStorage
 
 // 📋 Handle form submission for adding meal items
 form.addEventListener("submit", function (e) {
   e.preventDefault();
 
-  const ingredientInput = ingredientDropdown.value.trim().toLowerCase();
+  const ingredientInput = document.getElementById("ingredient").value.trim().toLowerCase();
   const amountInput = parseFloat(document.getElementById("amount").value);
 
   // Validate inputs

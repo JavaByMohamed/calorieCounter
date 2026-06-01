@@ -532,4 +532,8 @@ updateGoalsBtn.addEventListener("click", async () => {
 });
 
 // --- Init ---
-refreshTracker();
+if (typeof waitForFirebase === "function") {
+  waitForFirebase().then(() => refreshTracker());
+} else {
+  refreshTracker();
+}

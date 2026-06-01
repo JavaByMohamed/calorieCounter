@@ -307,4 +307,9 @@ async function cloudLoadIngredients() {
 // ============================================================
 
 // Auto-initialize Firebase when this script loads
-initFirebase();
+const firebaseInitPromise = initFirebase();
+
+/** Wait until Firebase is initialized */
+function waitForFirebase() {
+  return firebaseInitPromise;
+}
