@@ -151,6 +151,9 @@ function editIngredient(name) {
 
 // Call the functions on page load
 document.addEventListener("DOMContentLoaded", async () => {
+  if (typeof waitForFirebase === "function") {
+    await waitForFirebase();
+  }
   await syncFromCloud();
   displayIngredients();
 });
