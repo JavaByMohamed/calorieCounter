@@ -1182,11 +1182,6 @@ footer {
   border-top: 1px solid #eee;
 }
 
-#editGoalsSection h4 {
-  color: #27ae60;
-  margin-bottom: 10px;
-}
-
 /* Tracker Grid (donut + progress side by side) */
 .tracker-grid {
   display: grid;
@@ -1762,3 +1757,242 @@ small {
 .nutrition-preview button:hover {
   background: #388e3c;
 }
+
+/* ============================================================
+   RESPONSIVE / MOBILE-FRIENDLY OVERRIDES
+   ============================================================ */
+
+/* Make all tables horizontally scrollable on small screens */
+.meal-summary,
+.meal-history,
+.saved-meal-card,
+.workout-tracker,
+.daily-tracker,
+.manage-ingredients {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  min-width: 480px;
+  width: 100%;
+}
+
+/* Stack header elements on mobile */
+@media (max-width: 768px) {
+  header {
+    padding: 8px 0;
+  }
+
+  .topnav {
+    padding: 6px 10px;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .topnav .logo {
+    max-height: 36px;
+  }
+
+  main {
+    max-width: 100%;
+    margin: 16px auto;
+    padding: 0 10px;
+  }
+
+  /* Cards / sections: reduce padding */
+  .intro, .meal-form, .meal-summary, .bmi-bmr-calculator,
+  .diet-options, .manage-ingredients, .workout-tracker,
+  .meal-history, .daily-tracker, .save-meal-section,
+  .calorie-target, .new-user-form {
+    padding: 16px 12px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+
+  /* Buttons: full width on mobile */
+  button, .toggle-btn, .api-source-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .login-buttons {
+    flex-direction: column;
+  }
+
+  .toggle-buttons {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .api-source-toggle {
+    flex-direction: column;
+  }
+
+  /* History filters stack vertically */
+  .history-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .history-filters label {
+    margin-bottom: 2px;
+  }
+
+  .history-filters input[type="date"],
+  .history-filters select {
+    width: 100%;
+  }
+
+  /* Active user bar stack */
+  .active-user-bar {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+    padding: 12px 14px;
+  }
+
+  .active-user-bar div {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .active-user-bar div button {
+    flex: 1;
+  }
+
+  /* Macro goals grid: 2 columns on mobile */
+  .macro-goals-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  /* Tracker grid: stack */
+  .tracker-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-container canvas {
+    max-width: 200px;
+    margin: 0 auto;
+  }
+
+  /* Week grid: 3 cols on small screens (already handled but reinforced) */
+  .week-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  /* Nav cards: single column */
+  .nav-cards {
+    grid-template-columns: 1fr;
+  }
+
+  /* Stats cards stack */
+  .stats-cards {
+    flex-direction: column;
+  }
+
+  .stat-card {
+    min-width: unset;
+  }
+
+  /* Meal card header */
+  .meal-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  /* User select row */
+  .user-select-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .user-select-row .form-group {
+    min-width: unset;
+  }
+
+  /* Table cells: tighter padding */
+  .meal-summary th, .meal-summary td,
+  .saved-meal-card th, .saved-meal-card td,
+  .workout-table th, .workout-table td {
+    padding: 8px 6px;
+    font-size: 13px;
+  }
+
+  /* Cloud modal */
+  .cloud-modal-content {
+    width: 95%;
+    padding: 16px;
+    max-height: 85vh;
+  }
+
+  /* Font sizing */
+  h2 { font-size: 1.3rem; }
+  h3 { font-size: 1.1rem; }
+  h4 { font-size: 1rem; }
+
+  /* Date toggle in workout */
+  .date-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  /* Workout form button not full-width when inside form */
+  .workout-tracker form button[type="submit"],
+  .meal-form form button[type="submit"],
+  .manage-ingredients form button[type="submit"],
+  .bmi-bmr-calculator form button[type="submit"] {
+    width: 100%;
+  }
+
+  /* BMI radio buttons inline */
+  .bmi-bmr-calculator .form-group span.rbmark {
+    margin: 0;
+  }
+}
+
+/* Extra-small screens (< 400px) */
+@media (max-width: 400px) {
+  main {
+    padding: 0 6px;
+  }
+
+  .intro, .meal-form, .meal-summary, .bmi-bmr-calculator,
+  .diet-options, .manage-ingredients, .workout-tracker,
+  .meal-history, .daily-tracker, .save-meal-section {
+    padding: 12px 8px;
+  }
+
+  .macro-goals-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .week-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  input[type="text"], input[type="number"], input[type="email"], input[type="password"], select {
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+}
+
+/* Desktop enhancements (> 768px) */
+@media (min-width: 769px) {
+  main {
+    max-width: 900px;
+  }
+
+  /* Ensure tables stay inside containers */
+  .meal-summary table,
+  .saved-meal-card table,
+  .workout-table {
+    table-layout: auto;
+    word-break: break-word;
+  }
+}
+
