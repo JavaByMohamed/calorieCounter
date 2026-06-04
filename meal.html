@@ -15,11 +15,12 @@
 
       <!-- 🇸🇪 Swedish Food API Search -->
       <div class="api-search-section">
-        <h4>🇸🇪 Search Swedish Food Database</h4>
-        <p><small>Search for products from Swedish grocery stores (Willys, ICA, Coop, Lidl) or the official Livsmedelsverket database.</small></p>
+        <h4>🔍 Search Food Database</h4>
+        <p><small>Search for products from Swedish grocery stores, the official Livsmedelsverket database, or FatSecret's large food database.</small></p>
 
         <div class="api-source-toggle">
           <button type="button" class="api-source-btn active" data-source="stores">🏪 Store Products</button>
+          <button type="button" class="api-source-btn" data-source="fatsecret">🍽️ FatSecret</button>
           <button type="button" class="api-source-btn" data-source="livsmedelsverket">📋 Livsmedelsverket</button>
         </div>
 
@@ -31,6 +32,42 @@
         <div id="apiNutritionPreview" style="display:none;" class="nutrition-preview">
           <!-- Filled dynamically -->
         </div>
+      </div>
+
+      <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />
+
+      <!-- ➕ Quick Add Ingredient (inline) -->
+      <div class="inline-add-ingredient">
+        <h4>➕ Can't find your ingredient? Create it here</h4>
+        <form id="inlineAddIngredientForm">
+          <div class="form-group">
+            <label for="newIngName">Name</label>
+            <input type="text" id="newIngName" placeholder="e.g. turkey mince" required />
+          </div>
+          <div class="inline-macro-grid">
+            <div class="form-group">
+              <label for="newIngCal">Calories</label>
+              <input type="number" id="newIngCal" step="0.1" placeholder="per 100g" required />
+            </div>
+            <div class="form-group">
+              <label for="newIngFat">Fat (g)</label>
+              <input type="number" id="newIngFat" step="0.1" placeholder="per 100g" required />
+            </div>
+            <div class="form-group">
+              <label for="newIngCarbs">Carbs (g)</label>
+              <input type="number" id="newIngCarbs" step="0.1" placeholder="per 100g" required />
+            </div>
+            <div class="form-group">
+              <label for="newIngProtein">Protein (g)</label>
+              <input type="number" id="newIngProtein" step="0.1" placeholder="per 100g" required />
+            </div>
+            <div class="form-group">
+              <label for="newIngFiber">Fiber (g)</label>
+              <input type="number" id="newIngFiber" step="0.1" value="0" placeholder="per 100g" />
+            </div>
+          </div>
+          <button type="submit">➕ Add Ingredient & Use It</button>
+        </form>
       </div>
 
       <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;" />

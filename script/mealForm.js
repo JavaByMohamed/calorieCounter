@@ -1,13 +1,14 @@
-import { mockNutritionDB, syncFromCloud } from './mockDatabase.js';
+import { mockNutritionDB, syncFromCloud, addIngredient } from './mockDatabase.js';
 import { isCloudEnabled, saveToCloud, loadFromCloud } from './cloudStorage.js';
 import { searchSwedishFood, getFoodNutrition, searchSwedishStoreProducts } from './swedishFoodAPI.js';
+import { searchFatSecretFood, getFatSecretFoodDetails, isFatSecretConfigured } from './fatSecretAPI.js';
 
 // Example usage
 console.log(mockNutritionDB);
 
 // 🇸🇪 Swedish Food API Search Integration
 let apiSelectedFood = null;
-let currentSearchSource = "stores"; // "stores" (Open Food Facts) or "livsmedelsverket"
+let currentSearchSource = "stores"; // "stores" (Open Food Facts), "fatsecret", or "livsmedelsverket"
 
 function initAPISearch() {
   const searchInput = document.getElementById("apiSearch");
@@ -43,7 +44,56 @@ function initAPISearch() {
       resultsDiv.style.display = "block";
       console.log("[API Search] Source:", currentSearchSource, "Query:", query);
 
-      if (currentSearchSource === "stores") {
+      if (currentSearchSource === "fatsecret") {
+        // FatSecret — large food database (Swedish region)
+        if (!isFatSecretConfigured()) {
+          resultsDiv.innerHTML = '<div class="ingredient-option disabled">⚠️ FatSecret not configured. Set API credentials in fatSecretAPI.js</div>';
+          return;
+        }
+        let results = [];
+        try {
+          results = await searchFatSecretFood(query);
+        } catch (e) {
+          console.error("FatSecret search failed:", e);
+        }
+        if (results.length === 0) {
+          resultsDiv.innerHTML = '<div class="ingredient-option disabled">No results found on FatSecret.</div>';
+        } else {
+          window._fatSecretSearchResults = results;
+          resultsDiv.innerHTML = results.map((item, idx) =>
+            `<div class="ingredient-option" data-index="${idx}">
+              <strong>${item.name}</strong>${item.brand ? ` <small>(${item.brand})</small>` : ""}
+              ${item.type ? `<br><small>${item.type === "Brand" ? "🏷️ Brand" : "🥗 Generic"}</small>` : ""}
+              ${item.description ? `<br><small class="food-desc">${item.description}</small>` : ""}
+            </div>`
+          ).join("");
+          resultsDiv.querySelectorAll(".ingredient-option:not(.disabled)").forEach(opt => {
+            opt.addEventListener("click", async () => {
+              const item = window._fatSecretSearchResults[parseInt(opt.getAttribute("data-index"))];
+              searchInput.value = item.name;
+              resultsDiv.style.display = "none";
+              previewDiv.style.display = "block";
+              previewDiv.innerHTML = "<p>Loading detailed nutrition from FatSecret...</p>";
+
+              const nutrition = await getFatSecretFoodDetails(item.id);
+              if (nutrition) {
+                showNutritionPreview(previewDiv, nutrition);
+              } else {
+                // Fall back to basic info from search results
+                showNutritionPreview(previewDiv, {
+                  name: `${item.name}${item.brand ? " (" + item.brand + ")" : ""}`,
+                  calories: item.calories,
+                  protein: item.protein,
+                  fat: item.fat,
+                  carbs: item.carbs,
+                  fiber: item.fiber,
+                  source: "FatSecret",
+                });
+              }
+            });
+          });
+        }
+      } else if (currentSearchSource === "stores") {
         // Open Food Facts — Swedish grocery store products
         let results = [];
         try {
@@ -159,8 +209,8 @@ function useApiFood(nutrition) {
     amountInput.focus();
     amountInput.value = 100;
   }
-  // Refresh dropdown
-  renderIngredientList("");
+  // Refresh dropdown (but don't show it — user is moving to amount field)
+  renderIngredientList("", false);
 }
 
 // Populate the ingredient dropdown with search/filter capability
@@ -208,11 +258,9 @@ function populateIngredientDropdown() {
       }
     });
   }
-
-  renderIngredientList("");
 }
 
-function renderIngredientList(filter) {
+function renderIngredientList(filter, show = true) {
   const dropdown = document.getElementById("ingredientDropdownList");
   if (!dropdown) return;
 
@@ -224,7 +272,7 @@ function renderIngredientList(filter) {
 
   if (filtered.length === 0) {
     dropdown.innerHTML = '<div class="ingredient-option disabled">No ingredients found</div>';
-    dropdown.style.display = "block";
+    if (show) dropdown.style.display = "block";
     return;
   }
 
@@ -232,7 +280,11 @@ function renderIngredientList(filter) {
     `<div class="ingredient-option" data-value="${name}">${name.charAt(0).toUpperCase() + name.slice(1)}</div>`
   ).join("");
 
-  dropdown.style.display = "block";
+  if (show) {
+    dropdown.style.display = "block";
+  } else {
+    dropdown.style.display = "none";
+  }
 
   // Click handlers for options
   dropdown.querySelectorAll(".ingredient-option:not(.disabled)").forEach(opt => {
@@ -252,6 +304,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   await syncFromCloud();
   populateIngredientDropdown();
   initAPISearch();
+  initInlineIngredientForm();
+  loadReusedMeal();
 });
 
 // 🥗 Meal Form Handling
@@ -592,3 +646,101 @@ function getActiveUserFromCookie() {
   const match = document.cookie.match(/(?:^|; )activeUser=([^;]*)/);
   return match ? decodeURIComponent(match[1]) : "";
 }
+
+// ➕ Inline ingredient creation from the meal form page
+function initInlineIngredientForm() {
+  const form = document.getElementById("inlineAddIngredientForm");
+  if (!form) return;
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    const name = document.getElementById("newIngName").value.trim();
+    const calories = parseFloat(document.getElementById("newIngCal").value);
+    const protein = parseFloat(document.getElementById("newIngProtein").value);
+    const fat = parseFloat(document.getElementById("newIngFat").value);
+    const carbs = parseFloat(document.getElementById("newIngCarbs").value);
+    const fiber = parseFloat(document.getElementById("newIngFiber").value) || 0;
+
+    if (!name || isNaN(calories) || isNaN(protein) || isNaN(fat) || isNaN(carbs)) {
+      alert("Please fill in all required fields with valid numbers.");
+      return;
+    }
+
+    // Save to the database (persists to cloud)
+    addIngredient(name, calories, protein, fat, carbs, fiber);
+
+    // Refresh the ingredient dropdown (don't show it)
+    renderIngredientList("", false);
+
+    // Auto-select the new ingredient and focus amount
+    const ingredientInput = document.getElementById("ingredient");
+    if (ingredientInput) {
+      ingredientInput.value = name.toLowerCase();
+    }
+    const amountInput = document.getElementById("amount");
+    if (amountInput) {
+      amountInput.focus();
+      amountInput.value = 100;
+    }
+
+    // Reset the inline form
+    form.reset();
+    alert(`✅ "${name}" added to your ingredient database and selected!`);
+  });
+}
+
+// ♻️ Load a reused meal from session storage (set by meal history page)
+function loadReusedMeal() {
+  const data = sessionStorage.getItem("reuseMeal");
+  if (!data) return;
+  sessionStorage.removeItem("reuseMeal");
+
+  try {
+    const meal = JSON.parse(data);
+    if (!meal.items || meal.items.length === 0) return;
+
+    // Add each item's nutrition data to mockDB so editing works
+    meal.items.forEach(item => {
+      const name = item.name.toLowerCase();
+      if (!mockNutritionDB[name] && item.amount > 0) {
+        const factor = 100 / item.amount;
+        mockNutritionDB[name] = {
+          calories: +(item.calories * factor).toFixed(2),
+          protein: +(item.protein * factor).toFixed(2),
+          fat: +(item.fat * factor).toFixed(2),
+          carbs: +(item.carbs * factor).toFixed(2),
+          fiber: +((item.fiber || 0) * factor).toFixed(2),
+        };
+      }
+    });
+
+    // Load items into current meal
+    mealItems = meal.items.map(item => ({
+      name: item.name.toLowerCase(),
+      amount: item.amount,
+      calories: item.calories,
+      protein: item.protein,
+      fat: item.fat,
+      carbs: item.carbs,
+      fiber: item.fiber || 0,
+    }));
+
+    // Set meal name
+    const mealNameInput = document.getElementById("mealName");
+    if (mealNameInput) mealNameInput.value = meal.name || "";
+
+    // Set servings
+    const mealServingsInput = document.getElementById("mealServings");
+    if (mealServingsInput) mealServingsInput.value = meal.servings || 1;
+
+    // Refresh ingredient dropdown and display
+    renderIngredientList("", false);
+    displayMeal();
+
+    console.log(`♻️ Reused meal "${meal.name}" loaded with ${mealItems.length} items`);
+  } catch (e) {
+    console.error("Failed to load reused meal:", e);
+  }
+}
+

@@ -3,34 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manage Ingredients</title>
+  <title>Ingredients</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header></header> <!-- Header will be dynamically loaded here -->
+  <header></header>
 
   <main>
+    <!-- Top Section: Add New Ingredient -->
     <section class="manage-ingredients">
-      <h3>Manage Ingredients</h3>
-      <p>You can edit or delete ingredients from the list below.</p>
-
-      <div class="toggle-buttons">
-        <button id="toggleFormBtn" class="toggle-btn active">Add Ingredient</button>
-        <button id="toggleListBtn" class="toggle-btn active">View Ingredients</button>
-        <button id="toggleBothBtn" class="toggle-btn">Show Both</button>
-        <button id="viewCloudBtn" class="toggle-btn cloud-btn">☁️ View Cloud Data</button>
-      </div>
-
-      <!-- Cloud Data Modal -->
-      <div id="cloudModal" class="cloud-modal" style="display:none;">
-        <div class="cloud-modal-content">
-          <div class="cloud-modal-header">
-            <h4>☁️ Cloud Storage Data</h4>
-            <button id="closeCloudModal" class="close-modal-btn">&times;</button>
-          </div>
-          <pre id="cloudDataOutput">Loading...</pre>
-        </div>
-      </div>
+      <h3>➕ Add New Ingredient</h3>
+      <p>Add a custom ingredient to your database (values per 100g).</p>
 
       <div id="addIngredientSection">
         <form id="addIngredientForm">
@@ -38,34 +21,125 @@
             <label for="ingredientName">Ingredient Name</label>
             <input type="text" id="ingredientName" placeholder="e.g. Salmon" required />
           </div>
-          <div class="form-group">
-            <label for="ingredientCalories">Calories (per 100g)</label>
-            <input type="number" id="ingredientCalories" placeholder="e.g. 208" step="0.01" required />
+          <div class="macro-goals-grid">
+            <div class="form-group">
+              <label for="ingredientCalories">Calories</label>
+              <input type="number" id="ingredientCalories" placeholder="e.g. 208" step="0.01" required />
+            </div>
+            <div class="form-group">
+              <label for="ingredientFat">Fat (g)</label>
+              <input type="number" id="ingredientFat" placeholder="e.g. 13.2" step="0.01" required />
+            </div>
+            <div class="form-group">
+              <label for="ingredientCarbs">Carbs (g)</label>
+              <input type="number" id="ingredientCarbs" placeholder="e.g. 0.5" step="0.01" required />
+            </div>
+            <div class="form-group">
+              <label for="ingredientProtein">Protein (g)</label>
+              <input type="number" id="ingredientProtein" placeholder="e.g. 20.5" step="0.01" required />
+            </div>
+            <div class="form-group">
+              <label for="ingredientFiber">Fiber (g)</label>
+              <input type="number" id="ingredientFiber" placeholder="e.g. 0" step="0.01" />
+            </div>
           </div>
-          <div class="form-group">
-            <label for="ingredientProtein">Protein (g per 100g)</label>
-            <input type="number" id="ingredientProtein" placeholder="e.g. 20.5" step="0.01" required />
-          </div>
-          <div class="form-group">
-            <label for="ingredientFat">Fat (g per 100g)</label>
-            <input type="number" id="ingredientFat" placeholder="e.g. 13.2" step="0.01" required />
-          </div>
-          <div class="form-group">
-            <label for="ingredientCarbs">Carbs (g per 100g)</label>
-            <input type="number" id="ingredientCarbs" placeholder="e.g. 0.5" step="0.01" required />
-          </div>
-          <div class="form-group">
-            <label for="ingredientFiber">Fiber (g per 100g)</label>
-            <input type="number" id="ingredientFiber" placeholder="e.g. 2.6" step="0.01" value="0" />
-          </div>
-          <button type="submit">Add Ingredient</button>
+          <button type="submit">💾 Add Ingredient</button>
         </form>
       </div>
+    </section>
 
-      <div id="ingredientListSection">
-        <h4>Ingredient List</h4>
-        <div id="ingredientList">
-          <!-- Ingredient list will be dynamically populated -->
+    <!-- Bottom Section: Browse / Search / Sort Ingredients -->
+    <section class="manage-ingredients">
+      <h3>🥦 Ingredient List</h3>
+      <p>Search, sort, edit or delete ingredients.</p>
+
+      <!-- Search & Sort Controls -->
+      <div class="ingredient-controls">
+        <div class="ingredient-search-box">
+          <label for="ingredientSearch" class="sr-only">Search ingredients</label>
+          <input type="text" id="ingredientSearch" placeholder="🔍 Search ingredients..." autocomplete="off" />
+        </div>
+        <div class="ingredient-sort-controls">
+          <label for="sortBy">Sort by:</label>
+          <select id="sortBy">
+            <option value="name">Name (A–Z)</option>
+            <option value="name-desc">Name (Z–A)</option>
+            <option value="calories-desc">Calories (High → Low)</option>
+            <option value="calories-asc">Calories (Low → High)</option>
+            <option value="protein-desc">Protein (High → Low)</option>
+            <option value="protein-asc">Protein (Low → High)</option>
+            <option value="carbs-desc">Carbs (High → Low)</option>
+            <option value="carbs-asc">Carbs (Low → High)</option>
+            <option value="fat-desc">Fat (High → Low)</option>
+            <option value="fat-asc">Fat (Low → High)</option>
+            <option value="fiber-desc">Fiber (High → Low)</option>
+            <option value="fiber-asc">Fiber (Low → High)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="ingredient-count" id="ingredientCount"></div>
+
+      <!-- Ingredient Table -->
+      <div class="ingredient-table-wrapper">
+        <table class="ingredient-table" id="ingredientTable">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="name">Ingredient <span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort="calories">Calories <span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort="protein">Protein (g) <span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort="fat">Fat (g) <span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort="carbs">Carbs (g) <span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort="fiber">Fiber (g) <span class="sort-arrow"></span></th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="ingredientTableBody">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Edit Modal -->
+      <div id="editIngredientModal" class="cloud-modal" style="display:none;">
+        <div class="cloud-modal-content" style="max-width:450px;">
+          <div class="cloud-modal-header">
+            <h4>✏️ Edit Ingredient</h4>
+            <button id="closeEditModal" class="close-modal-btn">&times;</button>
+          </div>
+          <form id="editIngredientForm">
+            <input type="hidden" id="editOriginalName" />
+            <div class="form-group">
+              <label for="editName">Ingredient Name</label>
+              <input type="text" id="editName" required />
+            </div>
+            <div class="macro-goals-grid">
+              <div class="form-group">
+                <label for="editCalories">Calories</label>
+                <input type="number" id="editCalories" step="0.01" required />
+              </div>
+              <div class="form-group">
+                <label for="editFat">Fat (g)</label>
+                <input type="number" id="editFat" step="0.01" required />
+              </div>
+              <div class="form-group">
+                <label for="editCarbs">Carbs (g)</label>
+                <input type="number" id="editCarbs" step="0.01" required />
+              </div>
+              <div class="form-group">
+                <label for="editProtein">Protein (g)</label>
+                <input type="number" id="editProtein" step="0.01" required />
+              </div>
+              <div class="form-group">
+                <label for="editFiber">Fiber (g)</label>
+                <input type="number" id="editFiber" step="0.01" />
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;">
+              <button type="submit">💾 Save Changes</button>
+              <button type="button" id="cancelEditBtn" class="secondary-btn">Cancel</button>
+            </div>
+          </form>
         </div>
       </div>
     </section>
@@ -81,79 +155,6 @@
   <script src="script/firebaseStorage.js"></script>
   <script src="script/loadHeader.js"></script>
   <script src="script/dropdownMenu.js"></script>
-  <script type="module" src="script/ingredientManagement.js"></script>
-  <script>
-    const toggleFormBtn = document.getElementById("toggleFormBtn");
-    const toggleListBtn = document.getElementById("toggleListBtn");
-    const toggleBothBtn = document.getElementById("toggleBothBtn");
-    const formSection = document.getElementById("addIngredientSection");
-    const listSection = document.getElementById("ingredientListSection");
-
-    toggleFormBtn.addEventListener("click", () => {
-      formSection.style.display = formSection.style.display === "none" ? "block" : "none";
-      toggleFormBtn.classList.toggle("active");
-    });
-
-    toggleListBtn.addEventListener("click", () => {
-      listSection.style.display = listSection.style.display === "none" ? "block" : "none";
-      toggleListBtn.classList.toggle("active");
-    });
-
-    toggleBothBtn.addEventListener("click", () => {
-      formSection.style.display = "block";
-      listSection.style.display = "block";
-      toggleFormBtn.classList.add("active");
-      toggleListBtn.classList.add("active");
-    });
-
-    // Cloud data viewer
-    const viewCloudBtn = document.getElementById("viewCloudBtn");
-    const cloudModal = document.getElementById("cloudModal");
-    const closeCloudModal = document.getElementById("closeCloudModal");
-    const cloudDataOutput = document.getElementById("cloudDataOutput");
-
-    viewCloudBtn.addEventListener("click", async () => {
-      cloudModal.style.display = "flex";
-      cloudDataOutput.textContent = "Loading...";
-
-      try {
-        // Try Firebase first
-        if (typeof waitForFirebase === "function") {
-          await waitForFirebase();
-        }
-        if (typeof cloudLoadIngredients === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
-          const data = await cloudLoadIngredients();
-          if (data && Object.keys(data).length > 0) {
-            cloudDataOutput.textContent = JSON.stringify(data, null, 2);
-          } else {
-            cloudDataOutput.textContent = "No data found in cloud yet. Add an ingredient to create your first sync.";
-          }
-          return;
-        }
-        // Fallback to JSONBin
-        const { loadFromCloud, isCloudEnabled } = await import('./script/cloudStorage.js');
-        if (!isCloudEnabled()) {
-          cloudDataOutput.textContent = "⚠️ Cloud storage is not configured.";
-          return;
-        }
-        const data = await loadFromCloud();
-        if (data) {
-          cloudDataOutput.textContent = JSON.stringify(data, null, 2);
-        } else {
-          cloudDataOutput.textContent = "No data found in cloud yet. Add an ingredient to create your first sync.";
-        }
-      } catch (err) {
-        cloudDataOutput.textContent = "Error loading cloud data: " + err.message;
-      }
-    });
-
-    closeCloudModal.addEventListener("click", () => {
-      cloudModal.style.display = "none";
-    });
-
-    cloudModal.addEventListener("click", (e) => {
-      if (e.target === cloudModal) cloudModal.style.display = "none";
-    });
-  </script>
+  <script type="module" src="script/ingredientPage.js"></script>
 </body>
 </html>

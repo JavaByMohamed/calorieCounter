@@ -301,6 +301,7 @@ function renderDayMeals(meals) {
           <h4>${meal.name}</h4>
           <span class="meal-date">🕐 ${time}</span>
           ${meal.servings > 1 ? `<span class="serving-badge">🍽️ ${meal.servings} servings</span>` : ''}
+          <button class="reuse-meal-btn" data-meal='${JSON.stringify(meal).replace(/'/g, "&#39;")}' title="Recreate this meal">♻️ Reuse</button>
         </div>
         <table>
           <thead><tr><th>Ingredient</th><th>Amount (g)</th><th>Calories</th><th>Protein</th><th>Fat</th><th>Carbs</th><th>Fiber</th></tr></thead>
@@ -320,6 +321,17 @@ function renderDayMeals(meals) {
       </div>`;
   });
   dayMeals.innerHTML = html;
+
+  // Attach reuse handlers
+  dayMeals.querySelectorAll(".reuse-meal-btn").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      const meal = JSON.parse(this.getAttribute("data-meal"));
+      if (meal) {
+        sessionStorage.setItem("reuseMeal", JSON.stringify(meal));
+        window.location.href = "meal.html";
+      }
+    });
+  });
 }
 
 // ==================== DAY WORKOUTS ====================

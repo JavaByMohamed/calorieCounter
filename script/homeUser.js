@@ -122,7 +122,8 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
   }
 
   setActiveUser(foundKey);
-  refreshHomeUI();
+  // Redirect to daily tracker (profile view) after login
+  window.location.href = "daily-tracker.html";
 });
 
 // Show create form

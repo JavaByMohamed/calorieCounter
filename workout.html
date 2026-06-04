@@ -95,6 +95,105 @@
           </div>
           <div id="workoutHistoryList"></div>
         </div>
+
+        <div class="workout-plans-section">
+          <h3>📋 Workout Plans</h3>
+          <p><small>Create custom workout plans, save today's workout as a plan, or start a session from a saved plan.</small></p>
+
+          <!-- Tab navigation for plans -->
+          <div class="plan-tabs">
+            <button class="plan-tab active" data-tab="my-plans">My Plans</button>
+            <button class="plan-tab" data-tab="create-plan">➕ Create Plan</button>
+            <button class="plan-tab" data-tab="save-today">📅 Save Today</button>
+          </div>
+
+          <!-- Tab: My Plans -->
+          <div class="plan-tab-content active" id="tab-my-plans">
+            <div id="workoutPlansContainer" style="margin-top: 15px;">
+              <p>No workout plans created yet.</p>
+            </div>
+          </div>
+
+          <!-- Tab: Create Custom Plan -->
+          <div class="plan-tab-content" id="tab-create-plan">
+            <div class="plan-builder">
+              <div class="form-group">
+                <label for="customPlanName">Plan Name</label>
+                <input type="text" id="customPlanName" placeholder="e.g. Push Day, Leg Day, Upper Body..." />
+              </div>
+
+              <div class="plan-builder-exercise-form">
+                <h4>Add Exercise to Plan</h4>
+                <div class="plan-exercise-row">
+                  <div class="form-group">
+                    <label for="planMuscleGroup">Muscle Group</label>
+                    <select id="planMuscleGroup">
+                      <option value="">-- Select --</option>
+                      <option value="chest">Chest</option>
+                      <option value="back">Back</option>
+                      <option value="shoulders">Shoulders</option>
+                      <option value="biceps">Biceps</option>
+                      <option value="triceps">Triceps</option>
+                      <option value="legs">Legs</option>
+                      <option value="glutes">Glutes</option>
+                      <option value="abs">Abs</option>
+                      <option value="forearms">Forearms</option>
+                      <option value="calves">Calves</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="planExerciseName">Exercise</label>
+                    <select id="planExerciseName">
+                      <option value="" disabled selected>-- Select a muscle group first --</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="planSets">Sets</label>
+                    <input type="number" id="planSets" min="1" placeholder="e.g. 4" />
+                  </div>
+                  <div class="form-group">
+                    <label for="planReps">Reps</label>
+                    <input type="number" id="planReps" min="1" placeholder="e.g. 10" />
+                  </div>
+                  <div class="form-group">
+                    <label for="planWeight">Weight (kg) <small>(optional)</small></label>
+                    <input type="number" id="planWeight" step="0.5" placeholder="Fill in later" />
+                  </div>
+                </div>
+                <button type="button" id="addExerciseToPlanBtn">➕ Add Exercise</button>
+              </div>
+
+              <div class="plan-builder-preview">
+                <h4>Plan Exercises</h4>
+                <div id="planBuilderList">
+                  <p class="empty-plan-msg">No exercises added yet. Start building your plan above.</p>
+                </div>
+              </div>
+
+              <button type="button" id="saveCustomPlanBtn" class="save-custom-plan-btn">💾 Save Plan</button>
+            </div>
+          </div>
+
+          <!-- Tab: Save Today -->
+          <div class="plan-tab-content" id="tab-save-today">
+            <div class="form-group">
+              <label for="planName">Plan Name</label>
+              <input type="text" id="planName" placeholder="e.g. Push Day, Leg Day..." />
+            </div>
+            <button onclick="saveTodayAsPlan()">💾 Save Today's Workout as Plan</button>
+          </div>
+        </div>
+
+        <!-- Active Workout Session (shown when using a plan) -->
+        <div id="activeWorkoutSession" class="active-workout-session" style="display:none;">
+          <h3>🏋️ Active Workout Session</h3>
+          <p class="session-plan-name"></p>
+          <div id="sessionExerciseList"></div>
+          <div class="session-actions">
+            <button id="finishSessionBtn" class="finish-session-btn">✅ Finish & Log Workout</button>
+            <button id="cancelSessionBtn" class="cancel-session-btn">✕ Cancel Session</button>
+          </div>
+        </div>
       </div>
     </section>
   </main>

@@ -101,6 +101,7 @@ async function displayHistory(filterDateStr, filterUsername) {
           <h4>${meal.name}</h4>
           <span class="meal-date">${formatDate(meal.date)}</span>
           <span class="serving-badge">🍽️ ${totalServingWeight.toFixed(0)}g total${meal.servings > 1 ? ` · ${meal.servings} servings · ${(totalServingWeight / meal.servings).toFixed(0)}g/serving` : ''}</span>
+          <button class="reuse-meal-btn" data-id="${meal.id}" title="Reuse this meal">♻️ Reuse</button>
           <button class="delete-btn delete-meal-btn" data-id="${meal.id}">🗑️ Delete</button>
         </div>
         <table>
@@ -156,6 +157,20 @@ async function displayHistory(filterDateStr, filterUsername) {
         h = h.filter((m) => m.id !== id);
         await saveMealHistory(h);
         displayHistory(filterDate.value || null, filterUser.value || null);
+      }
+    });
+  });
+
+  // Reuse buttons — load meal into meal form page for editing
+  document.querySelectorAll(".reuse-meal-btn").forEach((btn) => {
+    btn.addEventListener("click", async function () {
+      const id = parseInt(this.getAttribute("data-id"));
+      const h = await getMealHistory();
+      const meal = h.find((m) => m.id === id);
+      if (meal) {
+        // Store meal data in sessionStorage so meal.html can pick it up
+        sessionStorage.setItem("reuseMeal", JSON.stringify(meal));
+        window.location.href = "meal.html";
       }
     });
   });
