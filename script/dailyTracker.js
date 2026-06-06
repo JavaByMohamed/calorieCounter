@@ -85,16 +85,16 @@ function getWorkoutsForDate(workouts, dateStr) {
   return workouts.filter((w) => w.date === dateStr);
 }
 
-// --- Compute daily totals (uses per-serving when servings > 1) ---
+// --- Compute daily totals ---
+// Tracker entries already store the correct eaten amount in totals (perServing × servingsEaten)
 function computeDayTotals(meals) {
   const totals = { calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0 };
   meals.forEach((meal) => {
-    const servings = meal.servings || 1;
-    totals.calories += (meal.totals.calories || 0) / servings;
-    totals.protein += (meal.totals.protein || 0) / servings;
-    totals.fat += (meal.totals.fat || 0) / servings;
-    totals.carbs += (meal.totals.carbs || 0) / servings;
-    totals.fiber += (meal.totals.fiber || 0) / servings;
+    totals.calories += (meal.totals.calories || 0);
+    totals.protein += (meal.totals.protein || 0);
+    totals.fat += (meal.totals.fat || 0);
+    totals.carbs += (meal.totals.carbs || 0);
+    totals.fiber += (meal.totals.fiber || 0);
   });
   return totals;
 }
@@ -286,6 +286,13 @@ function renderMacroProgress(goals, consumed) {
   macroProgress.innerHTML = html;
 }
 
+// --- Save meal history helper ---
+async function saveMealHistory(history) {
+  if (typeof cloudSaveAllMealHistory === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+    await cloudSaveAllMealHistory(history);
+  }
+}
+
 // ==================== DAY MEALS ====================
 function renderDayMeals(meals) {
   if (meals.length === 0) {
@@ -296,13 +303,19 @@ function renderDayMeals(meals) {
   let html = `<h4>🍽️ Meals Eaten (${meals.length})</h4>`;
   meals.forEach((meal) => {
     const time = new Date(meal.date).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const servingsEaten = meal.servingsEaten || 1;
+    const totalServings = meal.servings || 1;
     html += `
       <div class="saved-meal-card">
         <div class="meal-card-header">
           <h4>${meal.name}</h4>
           <span class="meal-date">🕐 ${time}</span>
-          ${meal.servings > 1 ? `<span class="serving-badge">🍽️ ${meal.servings} servings</span>` : ''}
-          <button class="reuse-meal-btn" data-meal='${JSON.stringify(meal).replace(/'/g, "&#39;")}' title="Recreate this meal">♻️ Reuse</button>
+          ${totalServings > 1 ? `<span class="serving-badge">🍽️ ${servingsEaten} of ${totalServings} portions</span>` : ''}
+          <div class="meal-card-actions">
+            <button class="edit-tracker-meal-btn" data-id="${meal.id}" title="Change portions eaten">✏️ Edit</button>
+            <button class="reuse-meal-btn" data-id="${meal.id}" title="Reuse this meal">♻️ Reuse</button>
+            <button class="delete-btn delete-tracker-meal-btn" data-id="${meal.id}" title="Remove from tracker">🗑️ Delete</button>
+          </div>
         </div>
         <table>
           <thead><tr><th>Ingredient</th><th>Amount (g)</th><th>Calories</th><th>Protein</th><th>Fat</th><th>Carbs</th><th>Fiber</th></tr></thead>
@@ -313,24 +326,98 @@ function renderDayMeals(meals) {
     });
     html += `</tbody></table>
         <p class="meal-totals">
-          <strong>Calories:</strong> ${meal.totals.calories.toFixed(1)} |
-          <strong>Protein:</strong> ${meal.totals.protein.toFixed(1)}g |
-          <strong>Fat:</strong> ${meal.totals.fat.toFixed(1)}g |
-          <strong>Carbs:</strong> ${meal.totals.carbs.toFixed(1)}g |
-          <strong>Fiber:</strong> ${(meal.totals.fiber || 0).toFixed(1)}g
+          <strong>Logged:</strong> ${meal.totals.calories.toFixed(1)} cal |
+          ${meal.totals.protein.toFixed(1)}g protein |
+          ${meal.totals.fat.toFixed(1)}g fat |
+          ${meal.totals.carbs.toFixed(1)}g carbs |
+          ${(meal.totals.fiber || 0).toFixed(1)}g fiber
         </p>
+        ${meal.perServing ? `<p class="meal-totals" style="color:#888;"><strong>Per portion:</strong> ${meal.perServing.calories} cal | ${meal.perServing.protein}g P | ${meal.perServing.fat}g F | ${meal.perServing.carbs}g C | ${meal.perServing.fiber || 0}g fiber</p>` : ''}
       </div>`;
   });
   dayMeals.innerHTML = html;
 
-  // Attach reuse handlers
-  dayMeals.querySelectorAll(".reuse-meal-btn").forEach((btn) => {
-    btn.addEventListener("click", function () {
-      const meal = JSON.parse(this.getAttribute("data-meal"));
-      if (meal) {
-        sessionStorage.setItem("reuseMeal", JSON.stringify(meal));
-        window.location.href = "meal.html";
+  // Attach delete handlers — remove meal from tracker
+  dayMeals.querySelectorAll(".delete-tracker-meal-btn").forEach((btn) => {
+    btn.addEventListener("click", async function () {
+      const id = parseInt(this.getAttribute("data-id"));
+      if (confirm("Remove this meal from today's tracker?")) {
+        let allHistory = await getMealHistory();
+        allHistory = allHistory.filter((m) => m.id !== id);
+        await saveMealHistory(allHistory);
+        refreshTracker();
       }
+    });
+  });
+
+  // Attach edit handlers — change how many portions were eaten
+  dayMeals.querySelectorAll(".edit-tracker-meal-btn").forEach((btn) => {
+    btn.addEventListener("click", async function () {
+      const id = parseInt(this.getAttribute("data-id"));
+      let allHistory = await getMealHistory();
+      const meal = allHistory.find((m) => m.id === id);
+      if (!meal || !meal.perServing) {
+        alert("Cannot edit this meal — no per-serving data available.");
+        return;
+      }
+
+      const totalServings = meal.servings || 1;
+      const currentEaten = meal.servingsEaten || 1;
+      const newServings = prompt(
+        `This recipe makes ${totalServings} portion${totalServings > 1 ? 's' : ''}.\nCurrently logged: ${currentEaten} portion${currentEaten > 1 ? 's' : ''}.\n\nHow many portions did you eat?`,
+        currentEaten
+      );
+      if (newServings === null) return;
+
+      const parsed = parseInt(newServings);
+      if (isNaN(parsed) || parsed < 1) {
+        alert("Please enter a valid number (1 or more).");
+        return;
+      }
+
+      // Recalculate totals based on new servings eaten
+      meal.servingsEaten = parsed;
+      meal.totals = {
+        calories: +(meal.perServing.calories * parsed).toFixed(1),
+        protein: +(meal.perServing.protein * parsed).toFixed(1),
+        fat: +(meal.perServing.fat * parsed).toFixed(1),
+        carbs: +(meal.perServing.carbs * parsed).toFixed(1),
+        fiber: +((meal.perServing.fiber || 0) * parsed).toFixed(1),
+      };
+      meal.name = meal.name.replace(/ \(x\d+\)$/, "") + (parsed > 1 ? ` (x${parsed})` : "");
+
+      await saveMealHistory(allHistory);
+      refreshTracker();
+    });
+  });
+
+  // Attach reuse handlers — reuse meal with portion selection
+  dayMeals.querySelectorAll(".reuse-meal-btn").forEach((btn) => {
+    btn.addEventListener("click", async function () {
+      const id = parseInt(this.getAttribute("data-id"));
+      let allHistory = await getMealHistory();
+      const meal = allHistory.find((m) => m.id === id);
+      if (!meal) return;
+
+      const totalServings = meal.servings || 1;
+      let portionsToLog = 1;
+
+      if (totalServings > 1 && meal.perServing) {
+        const input = prompt(
+          `This recipe makes ${totalServings} portions.\nHow many portions do you want to log?`,
+          "1"
+        );
+        if (input === null) return;
+        portionsToLog = Math.max(1, parseInt(input) || 1);
+      }
+
+      // Store meal data with portion selection in sessionStorage
+      const reuseData = {
+        ...meal,
+        _requestedPortions: portionsToLog,
+      };
+      sessionStorage.setItem("reuseMeal", JSON.stringify(reuseData));
+      window.location.href = "meal.html";
     });
   });
 }

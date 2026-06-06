@@ -747,19 +747,25 @@ function loadReusedMeal() {
       fiber: item.fiber || 0,
     }));
 
-    // Set meal name
+    // Set meal name (strip old portion suffix like "(x2)")
     const mealNameInput = document.getElementById("mealName");
-    if (mealNameInput) mealNameInput.value = meal.name || "";
+    const cleanName = (meal.name || "").replace(/ \(x\d+\)$/, "");
+    if (mealNameInput) mealNameInput.value = cleanName;
 
-    // Set servings
+    // Set total servings (the recipe makes this many portions)
     const mealServingsInput = document.getElementById("mealServings");
     if (mealServingsInput) mealServingsInput.value = meal.servings || 1;
+
+    // Set tracker servings (how many portions to eat)
+    const requestedPortions = meal._requestedPortions || 1;
+    const trackerServingsInput = document.getElementById("trackerServings");
+    if (trackerServingsInput) trackerServingsInput.value = requestedPortions;
 
     // Refresh ingredient dropdown and display
     renderIngredientList("", false);
     displayMeal();
 
-    console.log(`♻️ Reused meal "${meal.name}" loaded with ${mealItems.length} items`);
+    console.log(`♻️ Reused meal "${cleanName}" loaded with ${mealItems.length} items (${requestedPortions} portion${requestedPortions > 1 ? 's' : ''} of ${meal.servings || 1})`);
   } catch (e) {
     console.error("Failed to load reused meal:", e);
   }

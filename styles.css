@@ -1022,6 +1022,35 @@ footer {
   margin: 0;
 }
 
+.meal-card-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.meal-card-actions button {
+  padding: 4px 10px;
+  font-size: 13px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #f8f8f8;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.meal-card-actions button:hover {
+  background: #e8e8e8;
+}
+
+.meal-card-actions .delete-btn {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+.meal-card-actions .delete-btn:hover {
+  background: #fdeaea;
+}
+
 .meal-date {
   color: #888;
   font-size: 14px;

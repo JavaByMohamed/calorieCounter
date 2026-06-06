@@ -149,15 +149,31 @@ async function displayHistory(filterDateStr, searchQuery) {
     });
   });
 
-  // Reuse buttons — load meal into meal form page for editing
+  // Reuse buttons — load meal into meal form page with portion selection
   document.querySelectorAll(".reuse-meal-btn").forEach((btn) => {
     btn.addEventListener("click", async function () {
       const id = parseInt(this.getAttribute("data-id"));
       const h = await getMealHistory();
       const meal = h.find((m) => m.id === id);
       if (meal) {
-        // Store meal data in sessionStorage so meal.html can pick it up
-        sessionStorage.setItem("reuseMeal", JSON.stringify(meal));
+        const totalServings = meal.servings || 1;
+        let portionsToLog = 1;
+
+        if (totalServings > 1 && meal.perServing) {
+          const input = prompt(
+            `This recipe makes ${totalServings} portions.\nHow many portions do you want to log?`,
+            "1"
+          );
+          if (input === null) return;
+          portionsToLog = Math.max(1, parseInt(input) || 1);
+        }
+
+        // Store meal data with portion selection in sessionStorage
+        const reuseData = {
+          ...meal,
+          _requestedPortions: portionsToLog,
+        };
+        sessionStorage.setItem("reuseMeal", JSON.stringify(reuseData));
         window.location.href = "meal.html";
       }
     });
