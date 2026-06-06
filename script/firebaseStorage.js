@@ -38,6 +38,18 @@ async function initFirebase() {
     return false;
   }
 
+  // Wait for Firebase SDK to be available (handles slow CDN loading on mobile)
+  const maxWait = 5000; // 5 seconds max wait for SDK
+  const startTime = Date.now();
+  while (typeof firebase === "undefined" && (Date.now() - startTime) < maxWait) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  if (typeof firebase === "undefined") {
+    console.error("❌ Firebase SDK not loaded (CDN blocked or network issue).");
+    return false;
+  }
+
   try {
     // Initialize Firebase app
     if (!firebase.apps.length) {
@@ -47,6 +59,20 @@ async function initFirebase() {
     }
 
     firebaseDb = firebase.firestore();
+
+    // Enable persistence for offline support (important for mobile)
+    try {
+      await firebaseDb.enablePersistence({ synchronizeTabs: true });
+      console.log("✅ Firestore offline persistence enabled");
+    } catch (persistErr) {
+      // Persistence may fail if multiple tabs are open or browser doesn't support it
+      if (persistErr.code === 'failed-precondition') {
+        console.warn("⚠️ Firestore persistence unavailable (multiple tabs open)");
+      } else if (persistErr.code === 'unimplemented') {
+        console.warn("⚠️ Firestore persistence not supported in this browser");
+      }
+    }
+
     firebaseAuth = firebase.auth();
 
     // Sign in anonymously so Firestore rules can verify requests come from the app
@@ -54,7 +80,7 @@ async function initFirebase() {
       await firebaseAuth.signInAnonymously();
       console.log("✅ Firebase anonymous auth successful");
     } catch (authError) {
-      console.warn("⚠️ Anonymous auth failed:", authError.message);
+      console.warn("⚠️ Anonymous auth failed:", authError.message, "— Firestore may still work in test mode");
     }
 
     firebaseReady = true;

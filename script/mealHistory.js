@@ -9,6 +9,16 @@ async function getMealHistory() {
     const meals = await cloudLoadAllMealHistory();
     return meals || [];
   }
+  // If Firebase isn't ready yet, wait briefly and retry once (helps on slow mobile connections)
+  if (typeof waitForFirebase === "function") {
+    console.warn("⚠️ Firebase not ready for meal history, retrying...");
+    await waitForFirebase();
+    if (typeof cloudLoadAllMealHistory === "function" && typeof isFirebaseReady === "function" && isFirebaseReady()) {
+      const meals = await cloudLoadAllMealHistory();
+      return meals || [];
+    }
+  }
+  console.warn("⚠️ Could not load meal history — Firebase unavailable");
   return [];
 }
 
@@ -175,9 +185,23 @@ document.getElementById("clearFilterBtn").addEventListener("click", function () 
 
 // Init — wait for Firebase to be ready
 async function initMealHistory() {
+  // Show loading state
+  if (historyOutput) {
+    historyOutput.innerHTML = '<p>⏳ Loading saved meals...</p>';
+  }
+
   if (typeof waitForFirebase === "function") {
     await waitForFirebase();
   }
+
+  // Check if Firebase is available
+  if (typeof isFirebaseReady === "function" && !isFirebaseReady()) {
+    if (historyOutput) {
+      historyOutput.innerHTML = '<p style="color:#e67e22;">⚠️ Could not connect to database. Check your internet connection and reload the page.</p>';
+    }
+    return;
+  }
+
   await displayHistory(null);
 }
 initMealHistory();
