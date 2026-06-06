@@ -67,7 +67,8 @@ function getMealsForUserAndDate(allMeals, username, dateStr) {
   return allMeals.filter((meal) => {
     const mealUser = (meal.username || "").toLowerCase();
     const mealDate = meal.date ? meal.date.substring(0, 10) : "";
-    return mealUser === username.toLowerCase() && mealDate === dateStr;
+    // Only show meals that were explicitly added to the tracker (eaten meals)
+    return meal.addedToTracker && mealUser === username.toLowerCase() && mealDate === dateStr;
   });
 }
 

@@ -127,36 +127,37 @@ export async function searchFatSecretFood(query, maxResults = 15) {
   }
 
   try {
-    const data = await fatSecretApiCall("foods.search.v3", {
+    const data = await fatSecretApiCall("foods.search", {
       search_expression: query.trim(),
       max_results: maxResults.toString(),
-      region: "SE",        // Swedish region
-      language: "sv",      // Swedish language
     });
 
-    const foods = data?.foods_search?.results?.food;
+    const foods = data?.foods?.food;
     if (!foods) return [];
 
     const foodList = Array.isArray(foods) ? foods : [foods];
 
     return foodList.map(food => {
-      // Parse the nutrition from the serving description
-      const servings = food.servings?.serving;
-      const serving = Array.isArray(servings) ? servings[0] : servings;
+      // Parse nutrition from food_description string
+      // Format: "Per XXg - Calories: XXXkcal | Fat: XXg | Carbs: XXg | Protein: XXg"
+      const desc = food.food_description || "";
+      const calories = parseFloat(desc.match(/Calories:\s*([\d.]+)/)?.[1] || 0);
+      const fat = parseFloat(desc.match(/Fat:\s*([\d.]+)/)?.[1] || 0);
+      const carbs = parseFloat(desc.match(/Carbs:\s*([\d.]+)/)?.[1] || 0);
+      const protein = parseFloat(desc.match(/Protein:\s*([\d.]+)/)?.[1] || 0);
 
       return {
         id: food.food_id,
         name: food.food_name,
         brand: food.brand_name || "",
         type: food.food_type || "", // "Brand" or "Generic"
-        description: food.food_description || "",
-        // Basic nutrition from description (per 100g when available)
-        calories: serving ? parseFloat(serving.calories || 0) : 0,
-        protein: serving ? parseFloat(serving.protein || 0) : 0,
-        fat: serving ? parseFloat(serving.fat || 0) : 0,
-        carbs: serving ? parseFloat(serving.carbohydrate || 0) : 0,
-        fiber: serving ? parseFloat(serving.fiber || 0) : 0,
-        servingDescription: serving ? serving.serving_description : "",
+        description: desc,
+        calories,
+        protein,
+        fat,
+        carbs,
+        fiber: 0, // Not available in v1 search results
+        servingDescription: desc.match(/Per\s+([^\-]+)/)?.[1]?.trim() || "",
       };
     });
   } catch (err) {
@@ -172,10 +173,8 @@ export async function searchFatSecretFood(query, maxResults = 15) {
  */
 export async function getFatSecretFoodDetails(foodId) {
   try {
-    const data = await fatSecretApiCall("food.get.v4", {
+    const data = await fatSecretApiCall("food.get.v2", {
       food_id: foodId.toString(),
-      region: "SE",
-      language: "sv",
     });
 
     const food = data?.food;

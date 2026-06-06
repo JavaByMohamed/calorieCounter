@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Ingredients</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="script/i18n.js"></script>
 </head>
 <body>
   <header></header>
@@ -12,68 +13,68 @@
   <main>
     <!-- Top Section: Add New Ingredient -->
     <section class="manage-ingredients">
-      <h3>➕ Add New Ingredient</h3>
-      <p>Add a custom ingredient to your database (values per 100g).</p>
+      <h3 data-i18n="ing.addNew">➕ Add New Ingredient</h3>
+      <p data-i18n="ing.addDesc">Add a custom ingredient to your database (values per 100g).</p>
 
       <div id="addIngredientSection">
         <form id="addIngredientForm">
           <div class="form-group">
-            <label for="ingredientName">Ingredient Name</label>
-            <input type="text" id="ingredientName" placeholder="e.g. Salmon" required />
+            <label for="ingredientName" data-i18n="ing.name">Ingredient Name</label>
+            <input type="text" id="ingredientName" data-i18n-placeholder="ing.namePlaceholder" placeholder="e.g. Salmon" required />
           </div>
           <div class="macro-goals-grid">
             <div class="form-group">
-              <label for="ingredientCalories">Calories</label>
-              <input type="number" id="ingredientCalories" placeholder="e.g. 208" step="0.01" required />
+              <label for="ingredientCalories" data-i18n="ing.calories">Calories</label>
+              <input type="number" id="ingredientCalories" data-i18n-placeholder="ing.caloriesPlaceholder" placeholder="e.g. 208" step="0.01" required />
             </div>
             <div class="form-group">
-              <label for="ingredientFat">Fat (g)</label>
-              <input type="number" id="ingredientFat" placeholder="e.g. 13.2" step="0.01" required />
+              <label for="ingredientFat" data-i18n="ing.fat">Fat (g)</label>
+              <input type="number" id="ingredientFat" data-i18n-placeholder="ing.fatPlaceholder" placeholder="e.g. 13.2" step="0.01" required />
             </div>
             <div class="form-group">
-              <label for="ingredientCarbs">Carbs (g)</label>
-              <input type="number" id="ingredientCarbs" placeholder="e.g. 0.5" step="0.01" required />
+              <label for="ingredientCarbs" data-i18n="ing.carbs">Carbs (g)</label>
+              <input type="number" id="ingredientCarbs" data-i18n-placeholder="ing.carbsPlaceholder" placeholder="e.g. 0.5" step="0.01" required />
             </div>
             <div class="form-group">
-              <label for="ingredientProtein">Protein (g)</label>
-              <input type="number" id="ingredientProtein" placeholder="e.g. 20.5" step="0.01" required />
+              <label for="ingredientProtein" data-i18n="ing.protein">Protein (g)</label>
+              <input type="number" id="ingredientProtein" data-i18n-placeholder="ing.proteinPlaceholder" placeholder="e.g. 20.5" step="0.01" required />
             </div>
             <div class="form-group">
-              <label for="ingredientFiber">Fiber (g)</label>
-              <input type="number" id="ingredientFiber" placeholder="e.g. 0" step="0.01" />
+              <label for="ingredientFiber" data-i18n="ing.fiber">Fiber (g)</label>
+              <input type="number" id="ingredientFiber" data-i18n-placeholder="ing.fiberPlaceholder" placeholder="e.g. 0" step="0.01" />
             </div>
           </div>
-          <button type="submit">💾 Add Ingredient</button>
+          <button type="submit" data-i18n="ing.addBtn">💾 Add Ingredient</button>
         </form>
       </div>
     </section>
 
     <!-- Bottom Section: Browse / Search / Sort Ingredients -->
     <section class="manage-ingredients">
-      <h3>🥦 Ingredient List</h3>
-      <p>Search, sort, edit or delete ingredients.</p>
+      <h3 data-i18n="ing.list">🥦 Ingredient List</h3>
+      <p data-i18n="ing.listDesc">Search, sort, edit or delete ingredients.</p>
 
       <!-- Search & Sort Controls -->
       <div class="ingredient-controls">
         <div class="ingredient-search-box">
           <label for="ingredientSearch" class="sr-only">Search ingredients</label>
-          <input type="text" id="ingredientSearch" placeholder="🔍 Search ingredients..." autocomplete="off" />
+          <input type="text" id="ingredientSearch" data-i18n-placeholder="ing.searchPlaceholder" placeholder="🔍 Search ingredients..." autocomplete="off" />
         </div>
         <div class="ingredient-sort-controls">
-          <label for="sortBy">Sort by:</label>
+          <label for="sortBy" data-i18n="ing.sortBy">Sort by:</label>
           <select id="sortBy">
-            <option value="name">Name (A–Z)</option>
-            <option value="name-desc">Name (Z–A)</option>
-            <option value="calories-desc">Calories (High → Low)</option>
-            <option value="calories-asc">Calories (Low → High)</option>
-            <option value="protein-desc">Protein (High → Low)</option>
-            <option value="protein-asc">Protein (Low → High)</option>
-            <option value="carbs-desc">Carbs (High → Low)</option>
-            <option value="carbs-asc">Carbs (Low → High)</option>
-            <option value="fat-desc">Fat (High → Low)</option>
-            <option value="fat-asc">Fat (Low → High)</option>
-            <option value="fiber-desc">Fiber (High → Low)</option>
-            <option value="fiber-asc">Fiber (Low → High)</option>
+            <option value="name" data-i18n="ing.nameAZ">Name (A–Z)</option>
+            <option value="name-desc" data-i18n="ing.nameZA">Name (Z–A)</option>
+            <option value="calories-desc" data-i18n="ing.caloriesHL">Calories (High → Low)</option>
+            <option value="calories-asc" data-i18n="ing.caloriesLH">Calories (Low → High)</option>
+            <option value="protein-desc" data-i18n="ing.proteinHL">Protein (High → Low)</option>
+            <option value="protein-asc" data-i18n="ing.proteinLH">Protein (Low → High)</option>
+            <option value="carbs-desc" data-i18n="ing.carbsHL">Carbs (High → Low)</option>
+            <option value="carbs-asc" data-i18n="ing.carbsLH">Carbs (Low → High)</option>
+            <option value="fat-desc" data-i18n="ing.fatHL">Fat (High → Low)</option>
+            <option value="fat-asc" data-i18n="ing.fatLH">Fat (Low → High)</option>
+            <option value="fiber-desc" data-i18n="ing.fiberHL">Fiber (High → Low)</option>
+            <option value="fiber-asc" data-i18n="ing.fiberLH">Fiber (Low → High)</option>
           </select>
         </div>
       </div>
@@ -85,13 +86,13 @@
         <table class="ingredient-table" id="ingredientTable">
           <thead>
             <tr>
-              <th class="sortable" data-sort="name">Ingredient <span class="sort-arrow"></span></th>
-              <th class="sortable" data-sort="calories">Calories <span class="sort-arrow"></span></th>
-              <th class="sortable" data-sort="protein">Protein (g) <span class="sort-arrow"></span></th>
-              <th class="sortable" data-sort="fat">Fat (g) <span class="sort-arrow"></span></th>
-              <th class="sortable" data-sort="carbs">Carbs (g) <span class="sort-arrow"></span></th>
-              <th class="sortable" data-sort="fiber">Fiber (g) <span class="sort-arrow"></span></th>
-              <th>Actions</th>
+              <th class="sortable" data-sort="name"><span data-i18n="ing.thIngredient">Ingredient</span> <span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort="calories"><span data-i18n="ing.thCalories">Calories</span> <span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort="protein"><span data-i18n="ing.thProtein">Protein (g)</span> <span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort="fat"><span data-i18n="ing.thFat">Fat (g)</span> <span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort="carbs"><span data-i18n="ing.thCarbs">Carbs (g)</span> <span class="sort-arrow"></span></th>
+              <th class="sortable" data-sort="fiber"><span data-i18n="ing.thFiber">Fiber (g)</span> <span class="sort-arrow"></span></th>
+              <th data-i18n="ing.thActions">Actions</th>
             </tr>
           </thead>
           <tbody id="ingredientTableBody">
@@ -104,40 +105,40 @@
       <div id="editIngredientModal" class="cloud-modal" style="display:none;">
         <div class="cloud-modal-content" style="max-width:450px;">
           <div class="cloud-modal-header">
-            <h4>✏️ Edit Ingredient</h4>
+            <h4 data-i18n="ing.editTitle">✏️ Edit Ingredient</h4>
             <button id="closeEditModal" class="close-modal-btn">&times;</button>
           </div>
           <form id="editIngredientForm">
             <input type="hidden" id="editOriginalName" />
             <div class="form-group">
-              <label for="editName">Ingredient Name</label>
+              <label for="editName" data-i18n="ing.name">Ingredient Name</label>
               <input type="text" id="editName" required />
             </div>
             <div class="macro-goals-grid">
               <div class="form-group">
-                <label for="editCalories">Calories</label>
+                <label for="editCalories" data-i18n="ing.calories">Calories</label>
                 <input type="number" id="editCalories" step="0.01" required />
               </div>
               <div class="form-group">
-                <label for="editFat">Fat (g)</label>
+                <label for="editFat" data-i18n="ing.fat">Fat (g)</label>
                 <input type="number" id="editFat" step="0.01" required />
               </div>
               <div class="form-group">
-                <label for="editCarbs">Carbs (g)</label>
+                <label for="editCarbs" data-i18n="ing.carbs">Carbs (g)</label>
                 <input type="number" id="editCarbs" step="0.01" required />
               </div>
               <div class="form-group">
-                <label for="editProtein">Protein (g)</label>
+                <label for="editProtein" data-i18n="ing.protein">Protein (g)</label>
                 <input type="number" id="editProtein" step="0.01" required />
               </div>
               <div class="form-group">
-                <label for="editFiber">Fiber (g)</label>
+                <label for="editFiber" data-i18n="ing.fiber">Fiber (g)</label>
                 <input type="number" id="editFiber" step="0.01" />
               </div>
             </div>
             <div style="display:flex;gap:10px;">
-              <button type="submit">💾 Save Changes</button>
-              <button type="button" id="cancelEditBtn" class="secondary-btn">Cancel</button>
+              <button type="submit" data-i18n="ing.saveChanges">💾 Save Changes</button>
+              <button type="button" id="cancelEditBtn" class="secondary-btn" data-i18n="home.cancel">Cancel</button>
             </div>
           </form>
         </div>
@@ -146,7 +147,7 @@
   </main>
 
   <footer>
-    <p>© 2025 calorieCounter. Built for fitness and nutrition enthusiasts.</p>
+    <p data-i18n="footer.text">© 2025 calorieCounter. Built for fitness and nutrition enthusiasts.</p>
   </footer>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>

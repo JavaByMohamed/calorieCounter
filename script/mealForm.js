@@ -94,7 +94,7 @@ function initAPISearch() {
           });
         }
       } else if (currentSearchSource === "stores") {
-        // Open Food Facts — Swedish grocery store products
+        // Willys API — Swedish grocery store products
         let results = [];
         try {
           results = await searchSwedishStoreProducts(query);
@@ -106,27 +106,47 @@ function initAPISearch() {
         } else {
           // Store results in a temporary array to avoid JSON-in-attribute issues
           window._storeSearchResults = results;
-          resultsDiv.innerHTML = results.map((item, idx) =>
-            `<div class="ingredient-option" data-index="${idx}">
+          resultsDiv.innerHTML = results.map((item, idx) => {
+            const hasNutrition = item.calories > 0 || item.protein > 0;
+            const nutritionBadge = hasNutrition
+              ? `<small style="color:#2ecc71">✅ ${item.calories} kcal</small>`
+              : `<small style="color:#999">⏳ Nutrition not available</small>`;
+            return `<div class="ingredient-option" data-index="${idx}">
               <strong>${item.name}</strong>${item.brand ? ` <small>(${item.brand})</small>` : ""}
-              ${item.stores ? `<br><small>🏪 ${item.stores}</small>` : ""}
-            </div>`
-          ).join("");
+              ${item.volume ? ` <small>${item.volume}</small>` : ""}
+              <br>${item.stores ? `<small>🏪 ${item.stores}</small> · ` : ""}${item.price ? `<small>💰 ${item.price}</small> · ` : ""}${nutritionBadge}
+            </div>`;
+          }).join("");
           resultsDiv.querySelectorAll(".ingredient-option:not(.disabled)").forEach(opt => {
             opt.addEventListener("click", () => {
               const item = window._storeSearchResults[parseInt(opt.getAttribute("data-index"))];
               searchInput.value = item.name;
               resultsDiv.style.display = "none";
-              showNutritionPreview(previewDiv, {
-                name: `${item.name}${item.brand ? " (" + item.brand + ")" : ""}`,
-                calories: item.calories,
-                protein: item.protein,
-                fat: item.fat,
-                carbs: item.carbs,
-                fiber: item.fiber,
-                source: item.source,
-                stores: item.stores,
-              });
+              if (item.calories > 0 || item.protein > 0) {
+                showNutritionPreview(previewDiv, {
+                  name: `${item.name}${item.brand ? " (" + item.brand + ")" : ""}`,
+                  calories: item.calories,
+                  protein: item.protein,
+                  fat: item.fat,
+                  carbs: item.carbs,
+                  fiber: item.fiber,
+                  source: item.source,
+                  stores: item.stores,
+                });
+              } else {
+                // No nutrition data — show product info with a note
+                previewDiv.style.display = "block";
+                previewDiv.innerHTML = `
+                  <p><strong>${item.name}</strong>${item.brand ? ` (${item.brand})` : ""}</p>
+                  <p>🏪 ${item.stores}${item.price ? ` · 💰 ${item.price}` : ""}${item.volume ? ` · ${item.volume}` : ""}</p>
+                  <p style="color:#e67e22">⚠️ Nutrition data not found in Open Food Facts database. You can add it manually below.</p>
+                  <p><small>💡 Tip: Check the product packaging or the store's website for accurate nutrition info.</small></p>
+                `;
+                apiSelectedFood = {
+                  name: `${item.name}${item.brand ? " (" + item.brand + ")" : ""}`,
+                  calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0,
+                };
+              }
             });
           });
         }
@@ -181,6 +201,7 @@ function showNutritionPreview(previewDiv, nutrition) {
     </p>
     ${nutrition.stores ? `<p><small>🏪 Sold at: ${nutrition.stores}</small></p>` : ""}
     <p><small>Source: ${nutrition.source}</small></p>
+    <p><small style="color:#999">ℹ️ Values are approximate. Check product packaging for exact nutrition info.</small></p>
     <button type="button" id="useApiDataBtn">✅ Use this ingredient</button>
   `;
   document.getElementById("useApiDataBtn").addEventListener("click", () => {

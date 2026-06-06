@@ -2523,3 +2523,81 @@ table {
   border: 0;
 }
 
+/* === LANGUAGE SELECTOR === */
+.lang-selector-wrapper {
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+.lang-selector {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  padding: 5px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.3s ease;
+}
+
+.lang-selector:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.lang-selector option {
+  color: #333;
+  background: white;
+}
+
+/* === RTL SUPPORT === */
+[dir="rtl"] body {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .nav-links {
+  direction: rtl;
+}
+
+[dir="rtl"] .topnav {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .nav-cards {
+  direction: rtl;
+}
+
+[dir="rtl"] .form-group {
+  text-align: right;
+}
+
+[dir="rtl"] input,
+[dir="rtl"] select,
+[dir="rtl"] textarea {
+  text-align: right;
+}
+
+[dir="rtl"] .history-filters {
+  direction: rtl;
+}
+
+[dir="rtl"] .lang-selector-wrapper {
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+@media (max-width: 768px) {
+  .lang-selector-wrapper {
+    margin-left: 5px;
+    margin-right: 5px;
+  }
+
+  .lang-selector {
+    padding: 4px 6px;
+    font-size: 0.8rem;
+  }
+}
+

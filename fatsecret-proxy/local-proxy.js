@@ -1,9 +1,14 @@
 /**
- * Local FatSecret API Proxy Server
- * Runs alongside live-server to handle OAuth + CORS for FatSecret API calls.
+ * Local API Proxy Server
+ * Handles OAuth + CORS for FatSecret API calls,
+ * and proxies Willys.se search requests (CORS-blocked from browser).
  *
  * Usage: node fatsecret-proxy/local-proxy.js
  * Runs on: http://localhost:8081
+ *
+ * Endpoints:
+ *   /?method=foods.search&...  → FatSecret API
+ *   /willys?q=kycklingbröst    → Willys.se search
  */
 
 const http = require("http");
@@ -35,6 +40,34 @@ function httpsRequest(url, options, postData) {
     req.on("error", reject);
     if (postData) req.write(postData);
     req.end();
+  });
+}
+
+/**
+ * Simple HTTPS GET that returns raw JSON
+ */
+function httpsGet(targetUrl) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(targetUrl);
+    const options = {
+      hostname: parsed.hostname,
+      path: parsed.pathname + parsed.search,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; CalorieCounter/1.0)",
+        "Accept": "application/json",
+      },
+    };
+    https.get(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => {
+        try {
+          resolve({ status: res.statusCode, data: JSON.parse(data) });
+        } catch {
+          resolve({ status: res.statusCode, data });
+        }
+      });
+    }).on("error", reject);
   });
 }
 
@@ -88,11 +121,32 @@ const server = http.createServer(async (req, res) => {
 
   try {
     const reqUrl = new URL(req.url, `http://localhost:${PORT}`);
+
+    // ── Willys proxy ──────────────────────────────────────────
+    if (reqUrl.pathname === "/willys") {
+      const query = reqUrl.searchParams.get("q");
+      if (!query) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Missing 'q' parameter" }));
+        return;
+      }
+
+      const willysUrl = `https://www.willys.se/search?q=${encodeURIComponent(query)}`;
+      console.log(`🏪 Willys search: "${query}"`);
+
+      const result = await httpsGet(willysUrl);
+
+      res.writeHead(result.status, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(result.data));
+      return;
+    }
+
+    // ── FatSecret proxy ───────────────────────────────────────
     const method = reqUrl.searchParams.get("method");
 
     if (!method) {
       res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Missing 'method' parameter" }));
+      res.end(JSON.stringify({ error: "Missing 'method' parameter. Use /?method=... for FatSecret or /willys?q=... for Willys." }));
       return;
     }
 
@@ -123,7 +177,9 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`\n🍽️  FatSecret proxy running at http://localhost:${PORT}`);
+  console.log(`\n🍽️  API Proxy running at http://localhost:${PORT}`);
+  console.log("   /?method=...        → FatSecret API");
+  console.log("   /willys?q=...       → Willys.se product search");
   console.log("   Ready to handle API requests from your frontend.\n");
 });
 

@@ -5,112 +5,111 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BMI and BMR Calculator</title>
   <link rel="stylesheet" href="styles.css" />
+  <script src="script/i18n.js"></script>
 </head>
 <body>
-    <header></header> <!-- Header will be dynamically loaded here -->
+    <header></header>
 
   <main>
     <section class="bmi-bmr-calculator">
-      <h2>Calculate Your BMI and BMR</h2>
+      <h2 data-i18n="bmi.title">Calculate Your BMI and BMR</h2>
       <form id="bmiBmrForm">
         <div class="form-group">
-          <label for="bmiUsername">Save results to:</label>
+          <label for="bmiUsername" data-i18n="bmi.saveResults">Save results to:</label>
           <select id="bmiUsername" disabled>
-            <option value="">-- Not logged in --</option>
+            <option value="" data-i18n="bmi.notLoggedIn">-- Not logged in --</option>
           </select>
-          <small>You can calculate freely without logging in. Log in from the <a href="index.html">Home page</a> to save results to your profile.</small>
+          <small data-i18n="bmi.saveNote">You can calculate freely without logging in. Log in from the Home page to save results to your profile.</small>
         </div>
         <div class="form-group">
-          <label for="gender">Gender</label>
+          <label for="gender" data-i18n="bmi.gender">Gender</label>
           <input type="radio" name="sex" id="sex1" value="m" checked />
-          <span class="rbmark"></span>Male
+          <span class="rbmark"></span><span data-i18n="bmi.male">Male</span>
           &nbsp;
           <input type="radio" name="sex" id="sex2" value="f" />
-          <span class="rbmark"></span>Female
+          <span class="rbmark"></span><span data-i18n="bmi.female">Female</span>
         </div>
 
         <div class="form-group">
-          <label for="age">Age (years)</label>
-          <input type="number" id="age" placeholder="e.g. 25 years" required />
+          <label for="age" data-i18n="bmi.age">Age (years)</label>
+          <input type="number" id="age" data-i18n-placeholder="bmi.agePlaceholder" placeholder="e.g. 25 years" required />
         </div>
 
         <div class="form-group">
-          <label for="height">Height (cm)</label>
-          <input type="number" id="height" placeholder="e.g. 175 CM" required />
+          <label for="height" data-i18n="bmi.height">Height (cm)</label>
+          <input type="number" id="height" data-i18n-placeholder="bmi.heightPlaceholder" placeholder="e.g. 175 CM" required />
         </div>
 
         <div class="form-group">
-          <label for="weight">Weight (kg)</label>
-          <input type="number" id="weight" placeholder="e.g. 70 KG" required />
+          <label for="weight" data-i18n="bmi.weight">Weight (kg)</label>
+          <input type="number" id="weight" data-i18n-placeholder="bmi.weightPlaceholder" placeholder="e.g. 70 KG" required />
         </div>
 
         <div class="form-group">
-          <label for="activityLevel">Activity Level</label>
+          <label for="activityLevel" data-i18n="bmi.activityLevel">Activity Level</label>
           <select id="activityLevel" required>
-            <option value="1.2">Sedentary (little or no exercise)</option>
-            <option value="1.375">Lightly active (1-3 days/week)</option>
-            <option value="1.55" selected>Moderately active (3-5 days/week)</option>
-            <option value="1.725">Very active (6-7 days/week)</option>
-            <option value="1.9">Extra active (very hard exercise/physical job)</option>
+            <option value="1.2" data-i18n="bmi.sedentary">Sedentary (little or no exercise)</option>
+            <option value="1.375" data-i18n="bmi.lightlyActive">Lightly active (1-3 days/week)</option>
+            <option value="1.55" selected data-i18n="bmi.moderatelyActive">Moderately active (3-5 days/week)</option>
+            <option value="1.725" data-i18n="bmi.veryActive">Very active (6-7 days/week)</option>
+            <option value="1.9" data-i18n="bmi.extraActive">Extra active (very hard exercise/physical job)</option>
           </select>
         </div>
 
-        <button type="submit">Calculate BMI and BMR</button>
+        <button type="submit" data-i18n="bmi.calculate">Calculate BMI and BMR</button>
       </form>
 
       <div class="bmi-result">
-        <h3>Your BMI</h3>
+        <h3 data-i18n="bmi.yourBmi">Your BMI</h3>
         <p id="bmiValue"></p>
         <p id="bmiCategory"></p>
         <p id="bmiAdvice"></p>
       </div>
 
       <div class="bmr-result">
-        <h3>Your BMR</h3>
-        <p><strong>BMR:</strong> <span id="bmrValue"></span> kcal/day</p>
-        <p><strong>TDEE:</strong> <span id="tdeeValue"></span> kcal/day</p>
+        <h3 data-i18n="bmi.yourBmr">Your BMR</h3>
+        <p><strong data-i18n="bmi.bmr">BMR:</strong> <span id="bmrValue"></span> <span data-i18n="bmi.kcalDay">kcal/day</span></p>
+        <p><strong data-i18n="bmi.tdee">TDEE:</strong> <span id="tdeeValue"></span> <span data-i18n="bmi.kcalDay">kcal/day</span></p>
         <p id="bmrAdvice"></p>
       </div>
 
       <div id="calorieTargetSelection" style="display: none;" class="calorie-target">
-        <h3>Choose Your Calorie Target</h3>
-        <p>Select which value to base your diet plan on:</p>
+        <h3 data-i18n="bmi.chooseTarget">Choose Your Calorie Target</h3>
+        <p data-i18n="bmi.chooseTargetDesc">Select which value to base your diet plan on:</p>
         <label>
           <input type="radio" name="calorieTarget" value="bmr" />
-          <span id="bmrLabel"><strong>BMR</strong> — Use if you want a strict deficit (rest-level calories)</span>
+          <span id="bmrLabel" data-i18n="bmi.bmrOption"><strong>BMR</strong> — Use if you want a strict deficit (rest-level calories)</span>
         </label>
         <br/><br/>
         <label>
           <input type="radio" name="calorieTarget" value="tdee" checked />
-          <span id="tdeeLabel"><strong>TDEE</strong> — Use for maintenance (includes activity)</span>
+          <span id="tdeeLabel" data-i18n="bmi.tdeeOption"><strong>TDEE</strong> — Use for maintenance (includes activity)</span>
         </label>
       </div>
     </section>
-
-
 
     <section class="diet-options">
       <div id="dietResults">
         <!-- Diet options will be dynamically populated here -->
       </div>
       <div id="saveDietSection" style="display:none;" class="save-diet-section">
-        <h3>💾 Save Diet Plan to Your Profile</h3>
+        <h3 data-i18n="bmi.saveDiet">💾 Save Diet Plan to Your Profile</h3>
         <div class="form-group">
-          <label for="selectedDietPlan">Choose your plan:</label>
+          <label for="selectedDietPlan" data-i18n="bmi.choosePlan">Choose your plan:</label>
           <select id="selectedDietPlan">
-            <option value="Balanced Diet (Maintenance)">Balanced Diet (Maintenance)</option>
-            <option value="High Protein (Fat Loss)">High Protein (Fat Loss)</option>
-            <option value="Muscle Gain (Higher Carbs)">Muscle Gain (Higher Carbs)</option>
-            <option value="Low Carbs (Keto)">Low Carbs (Keto)</option>
+            <option value="Balanced Diet (Maintenance)" data-i18n="bmi.balanced">Balanced Diet (Maintenance)</option>
+            <option value="High Protein (Fat Loss)" data-i18n="bmi.highProtein">High Protein (Fat Loss)</option>
+            <option value="Muscle Gain (Higher Carbs)" data-i18n="bmi.muscleGain">Muscle Gain (Higher Carbs)</option>
+            <option value="Low Carbs (Keto)" data-i18n="bmi.lowCarbs">Low Carbs (Keto)</option>
           </select>
         </div>
-        <button type="button" id="saveDietBtn">💾 Save BMI, BMR & Diet to Profile</button>
+        <button type="button" id="saveDietBtn" data-i18n="bmi.saveBtn">💾 Save BMI, BMR & Diet to Profile</button>
       </div>
     </section>
   </main>
 
   <footer>
-    <p>© 2025 calorieCounter. Built for fitness and nutrition enthusiasts.</p>
+    <p data-i18n="footer.text">© 2025 calorieCounter. Built for fitness and nutrition enthusiasts.</p>
   </footer>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>

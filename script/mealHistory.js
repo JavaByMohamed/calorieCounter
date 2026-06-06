@@ -1,7 +1,7 @@
 const historyOutput = document.getElementById("historyOutput");
 const dailySummary = document.getElementById("dailySummary");
 const filterDate = document.getElementById("filterDate");
-const filterUser = document.getElementById("filterUser");
+const searchMeal = document.getElementById("searchMeal");
 
 // Firebase-only meal history
 async function getMealHistory() {
@@ -24,38 +24,19 @@ function formatDate(isoString) {
   return d.toLocaleDateString() + " " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-// Populate user filter dropdown
-async function populateUserFilter() {
-  const history = await getMealHistory();
-  const users = [...new Set(history.map((m) => m.username || "unknown").filter(Boolean))];
-  filterUser.innerHTML = '<option value="">All Users</option>';
-  users.sort().forEach((u) => {
-    const opt = document.createElement("option");
-    opt.value = u;
-    opt.textContent = u.charAt(0).toUpperCase() + u.slice(1);
-    filterUser.appendChild(opt);
-  });
-}
-
-function capitalize(str) {
-  return str ? str.charAt(0).toUpperCase() + str.slice(1) : "Unknown";
-}
-
-function getUserColor(username) {
-  const colors = ["#3498db", "#e74c3c", "#2ecc71", "#9b59b6", "#f39c12", "#1abc9c", "#e67e22", "#e91e63"];
-  let hash = 0;
-  for (let i = 0; i < (username || "").length; i++) hash = username.charCodeAt(i) + ((hash << 5) - hash);
-  return colors[Math.abs(hash) % colors.length];
-}
-
-async function displayHistory(filterDateStr, filterUsername) {
+async function displayHistory(filterDateStr, searchQuery) {
   let history = await getMealHistory();
+
+  // Only show saved meals (recipes), NOT eaten/tracker entries
+  history = history.filter((meal) => !meal.addedToTracker);
 
   if (filterDateStr) {
     history = history.filter((meal) => meal.date.startsWith(filterDateStr));
   }
-  if (filterUsername) {
-    history = history.filter((meal) => (meal.username || "").toLowerCase() === filterUsername.toLowerCase());
+
+  if (searchQuery) {
+    const query = searchQuery.toLowerCase();
+    history = history.filter((meal) => meal.name.toLowerCase().includes(query));
   }
 
   if (history.length === 0) {
@@ -74,7 +55,7 @@ async function displayHistory(filterDateStr, filterUsername) {
     dayTotals.fiber += (meal.totals.fiber || 0);
   });
 
-  const label = filterUsername ? capitalize(filterUsername) + "'s" : (filterDateStr ? "Day" : "All Time");
+  const label = filterDateStr ? "Day" : "All Time";
   dailySummary.innerHTML = `
     <div class="daily-totals">
       <h4>📊 ${label} Totals (${history.length} meal${history.length > 1 ? "s" : ""})</h4>
@@ -90,14 +71,11 @@ async function displayHistory(filterDateStr, filterUsername) {
 
   let html = "";
   history.forEach((meal) => {
-    const username = meal.username || "unknown";
-    const userColor = getUserColor(username);
     const totalServingWeight = meal.items.reduce((sum, item) => sum + item.amount, 0);
 
     html += `
       <div class="saved-meal-card">
         <div class="meal-card-header">
-          <span class="user-badge" style="background:${userColor};">👤 ${capitalize(username)}</span>
           <h4>${meal.name}</h4>
           <span class="meal-date">${formatDate(meal.date)}</span>
           <span class="serving-badge">🍽️ ${totalServingWeight.toFixed(0)}g total${meal.servings > 1 ? ` · ${meal.servings} servings · ${(totalServingWeight / meal.servings).toFixed(0)}g/serving` : ''}</span>
@@ -156,7 +134,7 @@ async function displayHistory(filterDateStr, filterUsername) {
         let h = await getMealHistory();
         h = h.filter((m) => m.id !== id);
         await saveMealHistory(h);
-        displayHistory(filterDate.value || null, filterUser.value || null);
+        displayHistory(filterDate.value || null, searchMeal.value.trim() || null);
       }
     });
   });
@@ -178,16 +156,20 @@ async function displayHistory(filterDateStr, filterUsername) {
 
 // Filters
 filterDate.addEventListener("change", function () {
-  displayHistory(this.value || null, filterUser.value || null);
+  displayHistory(this.value || null, searchMeal.value.trim() || null);
 });
 
-filterUser.addEventListener("change", function () {
-  displayHistory(filterDate.value || null, this.value || null);
+let searchDebounce = null;
+searchMeal.addEventListener("input", function () {
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => {
+    displayHistory(filterDate.value || null, this.value.trim() || null);
+  }, 300);
 });
 
 document.getElementById("clearFilterBtn").addEventListener("click", function () {
   filterDate.value = "";
-  filterUser.value = "";
+  searchMeal.value = "";
   displayHistory(null, null);
 });
 
@@ -196,7 +178,6 @@ async function initMealHistory() {
   if (typeof waitForFirebase === "function") {
     await waitForFirebase();
   }
-  await populateUserFilter();
-  await displayHistory(null, null);
+  await displayHistory(null);
 }
 initMealHistory();
