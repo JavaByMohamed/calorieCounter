@@ -2653,3 +2653,115 @@ table {
   }
 }
 
+/* === SERVING UNITS === */
+.serving-units-section {
+  margin-top: 15px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.serving-units-section h4 {
+  margin-bottom: 5px;
+  font-size: 0.95rem;
+}
+
+.serving-units-section small {
+  color: #666;
+}
+
+.serving-unit-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.serving-unit-row input.serving-unit-name {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.serving-unit-row input.serving-unit-grams {
+  width: 80px;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.serving-unit-row .remove-serving-unit-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.serving-unit-row .remove-serving-unit-btn:hover {
+  background: #c0392b;
+}
+
+.serving-units-badge {
+  color: #7f8c8d;
+  font-style: italic;
+}
+
+/* Amount + Unit wrapper in meal form */
+.amount-unit-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.amount-unit-wrapper input {
+  flex: 2;
+  padding: 14px 16px;
+  font-size: 1.1rem;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  min-height: 50px;
+}
+
+.amount-unit-wrapper input:focus {
+  border-color: #27ae60;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.15);
+}
+
+.amount-unit-wrapper select {
+  flex: 1;
+  min-width: 140px;
+  padding: 14px 12px;
+  font-size: 1.05rem;
+  font-weight: 500;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  background: white;
+  min-height: 50px;
+  cursor: pointer;
+  appearance: auto;
+}
+
+.amount-unit-wrapper select:focus {
+  border-color: #27ae60;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.15);
+}
+
+#unitConversionHint {
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: #27ae60 !important;
+  font-weight: 500;
+}

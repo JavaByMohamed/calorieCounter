@@ -44,6 +44,17 @@
               <input type="number" id="ingredientFiber" data-i18n-placeholder="ing.fiberPlaceholder" placeholder="e.g. 0" step="0.01" />
             </div>
           </div>
+
+          <!-- Serving Units (optional) -->
+          <div class="serving-units-section">
+            <h4>📏 Serving Units <small>(optional)</small></h4>
+            <p><small>Define custom units like "slice", "piece", etc. with their weight in grams.</small></p>
+            <div id="servingUnitsContainer">
+              <!-- Dynamic rows added by JS -->
+            </div>
+            <button type="button" id="addServingUnitBtn" class="secondary-btn">+ Add Unit</button>
+          </div>
+
           <button type="submit" data-i18n="ing.addBtn">💾 Add Ingredient</button>
         </form>
       </div>
@@ -136,6 +147,16 @@
                 <input type="number" id="editFiber" step="0.01" />
               </div>
             </div>
+
+            <!-- Serving Units in Edit Modal -->
+            <div class="serving-units-section">
+              <h4>📏 Serving Units</h4>
+              <div id="editServingUnitsContainer">
+                <!-- Dynamic rows added by JS -->
+              </div>
+              <button type="button" id="addEditServingUnitBtn" class="secondary-btn">+ Add Unit</button>
+            </div>
+
             <div style="display:flex;gap:10px;">
               <button type="submit" data-i18n="ing.saveChanges">💾 Save Changes</button>
               <button type="button" id="cancelEditBtn" class="secondary-btn" data-i18n="home.cancel">Cancel</button>

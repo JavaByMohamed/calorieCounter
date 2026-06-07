@@ -49,9 +49,13 @@ function renderIngredientTable() {
     return;
   }
 
-  tbody.innerHTML = items.map(item => `
+  tbody.innerHTML = items.map(item => {
+    const unitsInfo = item.servingUnits && item.servingUnits.length > 0
+      ? `<br><small class="serving-units-badge">📏 ${item.servingUnits.map(u => `${u.name} = ${u.grams}g`).join(', ')}</small>`
+      : '';
+    return `
     <tr>
-      <td class="ingredient-name-cell">${capitalize(item.name)}</td>
+      <td class="ingredient-name-cell">${capitalize(item.name)}${unitsInfo}</td>
       <td class="num-cell">${item.calories.toFixed(1)}</td>
       <td class="num-cell">${item.protein.toFixed(1)}</td>
       <td class="num-cell">${item.fat.toFixed(1)}</td>
@@ -62,7 +66,7 @@ function renderIngredientTable() {
         <button class="delete-ingredient-btn" data-name="${item.name}" title="Delete">🗑️</button>
       </td>
     </tr>
-  `).join('');
+  `;}).join('');
 
   // Attach delete handlers
   tbody.querySelectorAll('.delete-ingredient-btn').forEach(btn => {
@@ -110,6 +114,14 @@ function openEditModal(name) {
   document.getElementById('editFat').value = data.fat;
   document.getElementById('editCarbs').value = data.carbs;
   document.getElementById('editFiber').value = data.fiber || 0;
+
+  // Load serving units into edit modal
+  const container = document.getElementById('editServingUnitsContainer');
+  container.innerHTML = '';
+  if (data.servingUnits && data.servingUnits.length > 0) {
+    data.servingUnits.forEach(unit => addServingUnitRow(container, unit.name, unit.grams));
+  }
+
   document.getElementById('editIngredientModal').style.display = 'flex';
 }
 
@@ -146,8 +158,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    addIngredient(name, calories, protein, fat, carbs, fiber);
+    // Collect serving units from the add form
+    const servingUnits = collectServingUnits(document.getElementById('servingUnitsContainer'));
+
+    addIngredient(name, calories, protein, fat, carbs, fiber, servingUnits.length > 0 ? servingUnits : null);
     addForm.reset();
+    document.getElementById('servingUnitsContainer').innerHTML = '';
     renderIngredientTable();
 
     // Scroll to the list so user sees the new entry
@@ -212,12 +228,15 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
+    // Collect serving units from the edit modal
+    const servingUnits = collectServingUnits(document.getElementById('editServingUnitsContainer'));
+
     // Remove old entry if name changed
     if (originalName !== newName) {
       delete mockNutritionDB[originalName];
     }
 
-    addIngredient(newName, calories, protein, fat, carbs, fiber);
+    addIngredient(newName, calories, protein, fat, carbs, fiber, servingUnits.length > 0 ? servingUnits : null);
     closeEditModal();
     renderIngredientTable();
   });
@@ -228,5 +247,38 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('editIngredientModal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('editIngredientModal')) closeEditModal();
   });
+
+  // --- Serving Units buttons ---
+  document.getElementById('addServingUnitBtn').addEventListener('click', () => {
+    addServingUnitRow(document.getElementById('servingUnitsContainer'));
+  });
+  document.getElementById('addEditServingUnitBtn').addEventListener('click', () => {
+    addServingUnitRow(document.getElementById('editServingUnitsContainer'));
+  });
 });
+
+// === Serving Units Helpers ===
+function addServingUnitRow(container, unitName = '', unitGrams = '') {
+  const row = document.createElement('div');
+  row.className = 'serving-unit-row';
+  row.innerHTML = `
+    <input type="text" class="serving-unit-name" placeholder="e.g. slice" value="${unitName}" />
+    <input type="number" class="serving-unit-grams" placeholder="grams" step="0.1" value="${unitGrams}" />
+    <button type="button" class="remove-serving-unit-btn">✕</button>
+  `;
+  container.appendChild(row);
+  row.querySelector('.remove-serving-unit-btn').addEventListener('click', () => row.remove());
+}
+
+function collectServingUnits(container) {
+  const units = [];
+  container.querySelectorAll('.serving-unit-row').forEach(row => {
+    const name = row.querySelector('.serving-unit-name').value.trim();
+    const grams = parseFloat(row.querySelector('.serving-unit-grams').value);
+    if (name && !isNaN(grams) && grams > 0) {
+      units.push({ name, grams });
+    }
+  });
+  return units;
+}
 

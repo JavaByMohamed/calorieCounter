@@ -230,6 +230,8 @@ function useApiFood(nutrition) {
     amountInput.focus();
     amountInput.value = 100;
   }
+  // Update unit selector for this ingredient
+  updateAmountUnitSelector(name);
   // Refresh dropdown (but don't show it — user is moving to amount field)
   renderIngredientList("", false);
 }
@@ -313,6 +315,7 @@ function renderIngredientList(filter, show = true) {
       const input = document.getElementById("ingredient");
       input.value = this.getAttribute("data-value");
       dropdown.style.display = "none";
+      updateAmountUnitSelector(input.value);
     });
   });
 }
@@ -327,7 +330,87 @@ document.addEventListener("DOMContentLoaded", async () => {
   initAPISearch();
   initInlineIngredientForm();
   loadReusedMeal();
+
+  // Unit selector change — show conversion hint and update placeholder
+  const unitSelect = document.getElementById("amountUnit");
+  const amountInput = document.getElementById("amount");
+  if (unitSelect) {
+    unitSelect.addEventListener("change", () => {
+      updateUnitHint();
+      updateAmountPlaceholder();
+    });
+  }
+  if (amountInput) {
+    amountInput.addEventListener("input", updateUnitHint);
+  }
 });
+
+// Update the unit selector when an ingredient is chosen
+function updateAmountUnitSelector(ingredientName) {
+  const unitSelect = document.getElementById("amountUnit");
+  if (!unitSelect) return;
+
+  // Reset to grams only
+  unitSelect.innerHTML = '<option value="grams">grams</option>';
+
+  const data = mockNutritionDB[ingredientName];
+  if (data && data.servingUnits && data.servingUnits.length > 0) {
+    data.servingUnits.forEach(unit => {
+      const option = document.createElement("option");
+      option.value = unit.name;
+      option.textContent = `${unit.name} (${unit.grams}g each)`;
+      unitSelect.appendChild(option);
+    });
+  }
+
+  updateUnitHint();
+  updateAmountPlaceholder();
+}
+
+// Update placeholder based on selected unit
+function updateAmountPlaceholder() {
+  const unitSelect = document.getElementById("amountUnit");
+  const amountInput = document.getElementById("amount");
+  if (!unitSelect || !amountInput) return;
+
+  const selectedUnit = unitSelect.value;
+  if (selectedUnit === "grams") {
+    amountInput.placeholder = "e.g. 150";
+    amountInput.step = "0.1";
+  } else {
+    amountInput.placeholder = `e.g. 2 ${selectedUnit}s`;
+    amountInput.step = "0.5";
+  }
+}
+
+// Show a hint about the conversion
+function updateUnitHint() {
+  const hint = document.getElementById("unitConversionHint");
+  const unitSelect = document.getElementById("amountUnit");
+  const amountInput = document.getElementById("amount");
+  const ingredientInput = document.getElementById("ingredient");
+  if (!hint || !unitSelect || !amountInput || !ingredientInput) return;
+
+  const selectedUnit = unitSelect.value;
+  const amount = parseFloat(amountInput.value);
+
+  if (selectedUnit === "grams" || isNaN(amount) || amount <= 0) {
+    hint.style.display = "none";
+    return;
+  }
+
+  const data = mockNutritionDB[ingredientInput.value.trim().toLowerCase()];
+  if (data && data.servingUnits) {
+    const unit = data.servingUnits.find(u => u.name === selectedUnit);
+    if (unit) {
+      const totalGrams = (amount * unit.grams).toFixed(1);
+      hint.textContent = `= ${totalGrams}g (${amount} × ${unit.grams}g per ${unit.name})`;
+      hint.style.display = "block";
+      return;
+    }
+  }
+  hint.style.display = "none";
+}
 
 // 🥗 Meal Form Handling
 const form = document.getElementById("mealForm");
@@ -339,7 +422,9 @@ form.addEventListener("submit", function (e) {
   e.preventDefault();
 
   const ingredientInput = document.getElementById("ingredient").value.trim().toLowerCase();
-  const amountInput = parseFloat(document.getElementById("amount").value);
+  let amountInput = parseFloat(document.getElementById("amount").value);
+  const unitSelect = document.getElementById("amountUnit");
+  const selectedUnit = unitSelect ? unitSelect.value : "grams";
 
   // Validate inputs
   if (!ingredientInput || isNaN(amountInput) || amountInput <= 0) {
@@ -354,11 +439,20 @@ form.addEventListener("submit", function (e) {
     return;
   }
 
+  // Convert unit to grams if needed
+  let amountInGrams = amountInput;
+  if (selectedUnit !== "grams" && ingredientData.servingUnits) {
+    const unit = ingredientData.servingUnits.find(u => u.name === selectedUnit);
+    if (unit) {
+      amountInGrams = amountInput * unit.grams;
+    }
+  }
+
   // Calculate nutritional values
-  const factor = amountInput / 100;
+  const factor = amountInGrams / 100;
   const entry = {
     name: ingredientInput,
-    amount: amountInput,
+    amount: amountInGrams,
     calories: +(ingredientData.calories * factor).toFixed(1),
     protein: +(ingredientData.protein * factor).toFixed(1),
     fat: +(ingredientData.fat * factor).toFixed(1),
@@ -370,6 +464,12 @@ form.addEventListener("submit", function (e) {
   mealItems.push(entry);
   displayMeal();
   form.reset();
+  // Reset unit selector
+  if (unitSelect) {
+    unitSelect.innerHTML = '<option value="grams">grams</option>';
+  }
+  const hint = document.getElementById("unitConversionHint");
+  if (hint) hint.style.display = "none";
 });
 
 

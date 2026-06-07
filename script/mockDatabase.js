@@ -85,15 +85,32 @@ export function saveMockNutritionDB() {
 }
 
 // Function to add a new ingredient to the database
-export function addIngredient(name, calories, protein, fat, carbs, fiber = 0) {
-  mockNutritionDB[name.toLowerCase()] = {
+export function addIngredient(name, calories, protein, fat, carbs, fiber = 0, servingUnits = null) {
+  const key = name.toLowerCase();
+  const existing = mockNutritionDB[key];
+  mockNutritionDB[key] = {
     calories: parseFloat(calories),
     protein: parseFloat(protein),
     fat: parseFloat(fat),
     carbs: parseFloat(carbs),
     fiber: parseFloat(fiber) || 0,
   };
+  // Preserve or set serving units
+  if (servingUnits !== null) {
+    mockNutritionDB[key].servingUnits = servingUnits;
+  } else if (existing && existing.servingUnits) {
+    mockNutritionDB[key].servingUnits = existing.servingUnits;
+  }
   saveMockNutritionDB();
+}
+
+// Function to update serving units for an ingredient
+export function setServingUnits(name, units) {
+  const key = name.toLowerCase();
+  if (mockNutritionDB[key]) {
+    mockNutritionDB[key].servingUnits = units; // [{name: "slice", grams: 30}, ...]
+    saveMockNutritionDB();
+  }
 }
 
 // Sync from cloud on startup — merges cloud ingredients with defaults
