@@ -215,6 +215,25 @@
         </a>
       </div>
     </section>
+
+    <!-- Download Android APK Section -->
+    <section class="intro apk-download-section">
+      <h2>📱 Get the Android App</h2>
+      <p>Take CalorieCounter on the go with our native Android app.</p>
+      <a href="https://github.com/JavaByMohamed/calorieCounterAndroid/releases/latest/download/app-release.apk"
+         class="apk-download-btn" id="apkDownloadBtn">
+        ⬇️ Download Android APK
+      </a>
+      <p class="apk-fallback">
+        <a href="https://github.com/JavaByMohamed/calorieCounterAndroid/releases" target="_blank" rel="noopener">
+          View all releases on GitHub
+        </a>
+      </p>
+      <p class="apk-note">⚠️ Android only. You may need to allow installs from unknown sources.</p>
+      <p class="apk-hint" id="apkNonAndroidHint" style="display:none;">
+        ℹ️ APK is for Android devices. You can still download it to transfer to your phone.
+      </p>
+    </section>
   </main>
 
   <footer>
@@ -232,5 +251,15 @@
   <script src="script/dropdownMenu.js"></script>
   <script src="script/emailService.js"></script>
   <script src="script/homeUser.js"></script>
+  <script>
+    // Show hint for non-Android users
+    (function() {
+      var ua = navigator.userAgent || '';
+      if (!/android/i.test(ua)) {
+        var hint = document.getElementById('apkNonAndroidHint');
+        if (hint) hint.style.display = 'block';
+      }
+    })();
+  </script>
 </body>
 </html>
